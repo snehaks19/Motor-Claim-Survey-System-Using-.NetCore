@@ -1,0 +1,799 @@
+﻿@using MotorClaimSurveyApp.Areas.Transaction.ViewModels
+@model PolicyViewModel
+
+@{
+    Layout = "_Layout";
+
+}
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
+
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Success',
+                '@TempData["SuccessMessage"]',
+                'success'
+            ).then(() => {
+            $.post('/Transaction/ClaimEdit/ClearSuccessMessage')
+                .done(function () {
+                    console.log("TempData cleared successfully");
+                })
+                .fail(function () {
+                    console.error("Failed to clear TempData");
+                });
+            });
+        };
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Failed',
+                '@TempData["ErrorMessage"]',
+                'failed'
+            )
+        };
+
+    </script>
+}
+<style>
+    .btn-primary {
+        background-color: navy;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+    #PolGrossFCPrem::placeholder, #VehicleValue::placeholder {
+        text-align: left;
+    }
+</style>
+<script>
+
+    //Add comma Seperation and Limit decimal places to two
+
+        function limitDecimalAndFormat(input) {
+       
+        let value = input.value.trim();
+
+        if (parseFloat(value) === 0) {
+            $.get('/Master/ErrorCodeMaster/GetPolFcErrorMessage', function(response) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: response.message
+                }).then(() => {
+                    input.value = '';
+                });
+            });
+            return;  
+        }
+
+        value = value.replace(/[^0-9.]/g, '');
+        const parts = value.split('.');
+        if (parts.length > 2) {
+            value = parts[0] + '.' + parts[1]; 
+        }
+        if (parts[1] && parts[1].length > 2) {
+            value = parts[0] + '.' + parts[1].substring(0, 2); // Keep only two decimal places
+        }
+
+        input.value = value;
+    }
+
+
+    $(document).ready(function() {
+         
+            function formatNumberWithCommas(value) 
+            {
+                if (isNaN(value)) 
+                {
+                    return value; 
+                }
+
+                return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+
+            function applyCommaSeparation() {
+
+                    $('#VehicleValue').each(function () {
+                    var value = $(this).val();
+                    $(this).val(formatNumberWithCommas(value));
+                });
+                        $('#PolGrossFCPrem').each(function () {
+                        var value = $(this).val();
+                        $(this).val(formatNumberWithCommas(value));
+                    });
+                            $('#VehicleValue').each(function () {
+                            var value = $(this).val();
+                            $(this).val(formatNumberWithCommas(value));
+                        });
+            }
+
+                $('#VehicleValue').on('input', function () {
+                var rawValue = $(this).val().replace(/,/g, '');
+                $(this).val(formatNumberWithCommas(rawValue));
+            });
+                    $('#PolGrossFCPrem').on('input', function () {
+                    var rawValue = $(this).val().replace(/,/g, '');
+                    $(this).val(formatNumberWithCommas(rawValue));
+                });
+
+                $('#PolGrossLCPrem').on('change', function () {
+                        var rawValue = $(this).val().replace(/,/g, '');
+                        $(this).val(formatNumberWithCommas(rawValue));
+                    });
+
+            applyCommaSeparation();
+
+            var vehValue='@Model.objMotorPolicyEntity.PolVehValue';
+            var fcVal='@Model.objMotorPolicyEntity.PolGrossFcPrem';
+            var lcVal='@Model.objMotorPolicyEntity.PolGrossLcPrem';
+
+            
+            if(vehValue==0 && fcVal==0 && lcVal==0){
+                $('#VehicleValue').val("");
+                    $('#PolGrossFCPrem').val("");
+                    $('#PolGrossLCPrem').val("");
+            }
+
+            var polApprStatus = '@Model.objMotorPolicyEntity.PolApprStatus';
+            if (polApprStatus =="A") {
+
+                $('input, select, textarea').prop('disabled', true);
+                $('#approveButton').hide();
+                $('#btnSave').hide();
+                $('#btnReset').hide();
+            }
+
+        // veh value validations
+
+            $('#VehicleValue').on('input', function () {
+                var vehicleValue = parseFloat($('#VehicleValue').val().replace(/,/g, ''));
+
+                // if (isNaN(vehicleValue) || vehicleValue < 1 || vehicleValue > 9999999) {
+                //     $('#VehicleValueError').text('Please enter a value between 1 and 9,999,999.');
+                //         $('#VehicleValue').css('border-color', 'red');
+                // }
+                // else {
+                //     $('#VehicleValueError').text('');
+                //         $('#VehicleValue').css('border-color', '');
+                // }
+            });
+
+        // fc value validations
+                $('#PolGrossFCPrem').on('input', function () {
+                    var vehicleValue = parseFloat($('#PolGrossFCPrem').val().replace(/,/g, ''));
+
+                // if (isNaN(vehicleValue) || vehicleValue < 1 || vehicleValue > 100000) {
+                //         $('#txtFcError').text('Please enter a value between 1 and 100,000.');
+                //             $('#PolGrossFCPrem').css('border-color', 'red');
+                // }
+                // else {
+                //         $('#txtFcError').text('');
+                //             $('#PolGrossFCPrem').css('border-color', '');
+                // }
+            });
+         
+        // Date Validations
+
+        var today = new Date();
+        var day = today.getDate().toString().padStart(2, '0');
+        var month = (today.getMonth() + 1).toString().padStart(2, '0');
+        var year = today.getFullYear();
+        var formattedToday = day + '-' + month + '-' + year;
+        if('@Model.Mode'==="I"){
+                $("#txtIssDt").val(formattedToday);
+        }
+        
+
+        $('#txtPolFmDt').datepicker({
+            dateFormat: "dd-mm-yy",
+            minDate: today,
+            onSelect: function () {
+                updateToDate();
+            }
+        });
+
+        $(document).ready(function() {
+
+        var today = new Date();
+        var formattedToday = $.datepicker.formatDate('dd-mm-yy', today);
+             if('@Model.Mode'==="I"){
+        $('#txtPolFmDt').datepicker("setDate", formattedToday);
+
+        updateToDate();
+             }
+    });
+
+
+    function updateToDate() {
+        var fromDate = $("#txtPolFmDt").datepicker("getDate");
+        if (fromDate) {
+            var toDate = new Date(fromDate);
+            toDate.setDate(toDate.getDate() + 364);
+
+            $("#txtPolToDt").val($.datepicker.formatDate('dd-mm-yy', toDate));
+        }
+    }
+
+    function validateFromDate() {
+        var fromDateInput = $("#txtPolFmDt").val();
+        var today = new Date();
+
+        var dateFormatRegex = /^\d{2}-\d{2}-\d{4}$/;
+
+        if (!dateFormatRegex.test(fromDateInput)) {
+            alert("Date format must be dd-mm-yyyy!");
+            $("#txtPolFmDt").val("");
+            return false;
+        }
+
+        var dateParts = fromDateInput.split('-');
+        var day = parseInt(dateParts[0]);
+        var month = parseInt(dateParts[1]);
+        var year = parseInt(dateParts[2]);
+
+
+        if (month < 1 || month > 12) {
+            alert("Month must be between 1 and 12!");
+            $("#txtPolFmDt").val("");
+            return false;
+        }
+
+       
+        var maxDays = new Date(year, month, 0).getDate();
+
+
+        if (day < 1 || day > maxDays) {
+            alert(`Invalid day for the selected month! ${month} has only ${maxDays} days.`);
+            $("#txtPolFmDt").val("");
+            return false;
+        }
+
+       
+        var fromDate = new Date(year, month - 1, day); 
+
+
+        today.setHours(0, 0, 0, 0);
+
+       
+        if (fromDate < today) {
+            $.get('/Master/ErrorCodeMaster/GetDateErrorMessage', function(response) {
+                Swal.fire({
+                    title: 'Error',
+                    text: response.success ? response.message : 'Could not retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) $("#txtPolFmDt").val("");  // Clear field only if message was fetched
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+            return false;
+}
+
+
+        return true;
+    }
+
+
+    $("#txtPolFmDt").on("change", validateFromDate);
+    $("#txtPolFmDt").on("input", function() {
+        updateToDate();
+    });
+
+
+
+    //Mobile Number vaildation
+
+    $('#MobileNumber').on('change', function () {
+
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+
+                if (this.value.length !== 10){
+                $.get('/Master/ErrorCodeMaster/GetMobileErrorMessage', function(response) {
+                    Swal.fire({
+                        title: 'Warning',
+                        text: response.success ? response.message : 'Could not retrieve error message.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                            if (response.success) $("#MobileNumber").val("");  // Clear field only if message was fetched
+                    });
+                }).fail(function() {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to retrieve error message.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                });
+                return false;
+    }
+
+
+            if (this.value.startsWith('0')) {
+                this.value = this.value.substring(1);
+            }
+
+            if (/\s/.test(this.value)) {
+                this.value = this.value.replace(/\s+/g, '');
+            }
+    });
+
+    // Handle input change for FC Premium to calculate LC Premium
+
+    function updateLcPremium() {
+            var fcAmount = $('#PolGrossFCPrem').val();
+            var currencyCode = $('#PolCurrCode').val();
+
+            if (currencyCode && fcAmount) {
+
+                $.ajax({
+                    url: '/Transaction/PolicyEdit/GetConversionRate',
+                    type: 'GET',
+                    data: { currencyCode: currencyCode, fcAmount: fcAmount },
+                    success: function (data) {
+                        if (data.success) {
+                            $('#PolGrossLCPrem').val(formatNumber(data.lcAmount));
+                        } else {
+                            alert('Error: ' + data.errorMessage);
+                        }
+                    },
+                    error: function () {
+                        alert('Error occurred while converting currency');
+                    }
+                });
+            } else {
+
+                $('#PolGrossLCPrem').val('');
+            }
+    }
+
+
+    $('#PolGrossFCPrem').on('input', updateLcPremium);
+    $('#PolCurrCode').on('change', updateLcPremium);
+
+    $('#PolVehMake').on('change', function () {
+            var selectedMake = $(this).val();
+
+            if (selectedMake) {
+                $.ajax({
+                    url: '/Transaction/PolicyEdit/GetVehicleModels/',
+                    type: 'GET',
+                    data: { make: selectedMake },
+                    success: function (data) {
+                        var modelDropdown = $('#PolVehModel');
+                        modelDropdown.empty();
+
+                       
+                        modelDropdown.append('<option value="">--SELECT--</option>');
+                        console.log(data)
+                        
+                        if (data.length > 0) {
+                            $.each(data, function (index, item) {
+                                modelDropdown.append('<option value="' + item.value + '">' + item.text + '</option>');
+                            });
+                        } else {
+                            modelDropdown.append('<option value="">No models available</option>');
+                        }
+                    },
+                    error: function () {
+                        alert('Error loading vehicle models.');
+                    }
+                });
+            } else {
+               
+                $('#PolVehModel').empty().append('<option value="">Select Vehicle Model</option>');
+            }
+        });
+            
+
+
+            // // Validate form on Save button click
+            // $('#btnSave').click(function (e) {
+            //     var vehicleModel = $('#PolVehModel').val();
+            //     if (!vehicleModel || vehicleModel === "0") {
+            //         e.preventDefault(); // Prevent form submission
+            //         alert("Please select a Vehicle Model.");
+            //         return false;
+            //     }
+            // });
+
+    
+    function formatNumber(value) {
+
+    value = parseFloat(value).toFixed(2); // Ensure two decimal places
+    var parts = value.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Add commas to the integer part
+    return parts.join(".");
+}
+           
+    //  Approve Button
+
+        $('#approveButton').on('click', function () {
+        var poluid = $('#poluid').val();
+        console.log("PolUid value from hidden field:", poluid);
+
+        // Fetch the confirmation message from the server
+        $.ajax({
+            url: '/Master/ErrorCodeMaster/GetApprovalConfirmationMessage', // URL to get the confirmation message
+            type: 'GET',
+            success: function (response) {
+                if (response.success) {
+                    // Show SweetAlert confirmation with the message from the server
+                    Swal.fire({
+                        title: 'warning',
+                        text: response.message,  // Using the message from the ErrorCodeMaster
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, approve it!',
+                        cancelButtonText: 'No, cancel!',
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                    }).then((result) => {
+                        // If the user confirms, proceed with the AJAX request
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: '@Url.Action("ChangeApprovalStatus2", "PolicyEdit")',
+                                type: 'POST',
+                                data: { poluid: poluid },
+                                success: function (response) {
+                                    console.log("Response received:", response);
+                                    if (response.success) {
+                                        window.location.href = '/Transaction/PolicyEdit/PolicyEdit?poluid=' + poluid;
+                                        $('input, textarea, select').prop('disabled', true);
+                                        $('#approveButton').hide();
+                                        $('#btnSave').hide();
+                                    } else {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Approval failed',
+                                            text: 'Please try again.'
+                                        });
+                                    }
+                                },
+                                error: function (xhr, status, error) {
+                                    console.error(`Error: ${error}, Response: ${xhr.responseText}`);
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Request Error',
+                                        text: 'There was an error with the request. Check the console for details.'
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error fetching message',
+                        text: 'Could not load the approval confirmation message.'
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Request Error',
+                    text: 'Could not load the approval confirmation message from the server.'
+                });
+            }
+        });
+    });
+
+
+        //     $(function () {
+        //     $(".numberText").on("keyup", function () {
+        //         // Get the current value and sanitize it by removing all non-numeric characters except '.'.
+        //         var sanitizedValue = $(this).val().replace(/[^0-9.]/g, "");
+
+        //         // Split the value into integer and decimal parts.
+        //         var parts = sanitizedValue.split(".");
+
+        //         // Add commas to the integer part for thousand separators.
+        //         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+        //         // If there is a decimal part, limit it to two digits.
+        //         if (parts[1]) {
+        //             parts[1] = parts[1].substring(0, 2);
+        //         }
+
+        //         // Join the integer and decimal parts and set the updated value back to the input field.
+        //         $(this).val(parts.join("."));
+        //     });
+        // });
+
+
+
+    // $(function () {
+    //   $(".numberText").on("keyup", function () {
+    //       var sanitizedValue = $(this).val().replace(/[^0-9.]/g, "");
+    //       var parts = sanitizedValue.split(".");
+    //       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    //       if (parts[1] && parts[1].length > 2) {
+    //           parts[1] = parts[1].slice(0, 2);
+    //       }
+    //       $(this).val(parts.join("."));
+    //   });
+    // });
+
+    // $(function () {
+
+    //       var a = $('.numberText');
+
+    //       $.each(a, function () {
+
+    //           var value = $(this).val();
+    //           if (value != "") {
+
+    //               if (value.indexOf('.') === -1) {
+
+    //                   value += '.00';
+
+    //               }
+    //           }
+    //           var parts = value.split(".");
+
+    //           parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    //           $(this).val(parts.join("."));
+
+    //           if (value == "") {
+    //               document.getElementsByName('.numberText').value = '0.00';
+    //           }
+
+    //       });
+
+    // });
+
+
+    
+
+    function formatNumberWithCommas(value) {
+        if (value) {
+            return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        return value; // return the value as is if it's empty or invalid
+    }
+
+    $(function () {
+        // Initialize the value with comma formatting when the page loads
+        var initialValue = $("#PolGrossFCPrem").val();
+        $("#PolGrossFCPrem").val(formatNumberWithCommas(initialValue));
+         var initialValue1 = $("#PolGrossLCPrem").val();
+        $("#PolGrossLCPrem").val(formatNumberWithCommas(initialValue1));
+                var initialValue3 = $("#VehicleValue").val();
+                $("#VehicleValue").val(formatNumberWithCommas(initialValue3));
+
+        // Add comma separation while typing
+        $(".numberText").on("blur", function () {
+            var sanitizedValue = $(this).val().replace(/[^0-9.]/g, ""); // Remove any non-numeric characters
+            var parts = sanitizedValue.split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Add commas
+            if (parts[1] && parts[1].length > 2) {
+                parts[1] = parts[1].slice(0, 2); // Limit decimal places to 2
+            }
+            $(this).val(parts.join("."));
+        });
+    });
+
+
+});
+</script>
+
+
+
+<div class="heads">
+    <div class="d-flex justify-content-between align-items-start">
+        <button class="btn btn-primary back" type="button" onclick="window.location.href='/Transaction/PolicyListing/PolicyListing';">Back</button>        
+        @if (Model.Mode == "U" && Model.Mode != "A")
+        {
+            <button id="approveButton" class="btn btn-success right" type="button">Approve</button>
+        }
+    </div>
+    <h2>@ViewData["Title"]</h2>
+</div>
+
+
+<div class="container bg-light p-4 shadow rounded">
+    <h3 style="color: navy;" class="text-center mb-4">POLICY FORM</h3>
+    <br />
+    @if (Model.objMotorPolicyEntity.PolApprStatus == "A")
+    {
+        <label class="badge bg-success">Approved</label>
+        <br />
+        <br />
+    }
+    else if (Model.objMotorPolicyEntity.PolApprStatus == "N")
+    {
+        <label class="badge bg-warning">Not Approved</label>
+        <br />
+        <br />      
+    }
+    <form id="policyForm" action="@Url.Action("PolicyEdit", "PolicyEdit", new { poluid = Model.objMotorPolicyEntity.PolUid })" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row mb-3">
+            <input type="hidden" asp-for="PolUid" id="poluid" value="@Model.objMotorPolicyEntity.PolUid" />
+
+            <!-- Policy Number -->
+            <div class="col-md-4">
+                <label asp-for="PolNo" class="form-label">Policy Number </label>
+                <input type="text" asp-for="PolNo" class="form-control" maxlength="30" value="@Model.objMotorPolicyEntity.PolNo" readonly />
+                <span asp-validation-for="PolNo" class="text-danger"></span>
+            </div>
+
+            <!-- Issue Date -->
+            <div class="col-md-4">
+                <label for="PolIssDt" class="control-label">Policy Issue Date</label>
+                <input name="objMotorPolicyEntity.PolIssDt" id="txtIssDt" class="form-control" value="@(Model.objMotorPolicyEntity.PolIssDt.ToString("dd-MM-yyyy"))" readonly />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolIssDt)</span>
+            </div>
+
+            <!-- Policy From Date -->
+            <div class="col-md-4">              
+                <label for="PolFmDt" class="control-label">Policy From Date <span class="text-danger">*</span></label>
+                <input name="objMotorPolicyEntity.PolFmDt" id="txtPolFmDt" class="form-control" maxlength="10" value="@(Model.objMotorPolicyEntity.PolFmDt.ToString("dd-MM-yyyy"))" />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolFmDt)</span>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+
+            <!-- Policy To Date -->
+            <div class="col-md-4">
+                <label for="PolToDt" class="control-label">Policy To Date</label>
+                <input name="objMotorPolicyEntity.PolToDt" id="txtPolToDt" class="form-control" value="@(Model.objMotorPolicyEntity.PolToDt.ToString("dd-MM-yyyy"))" readonly />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolToDt)</span>
+            </div>
+
+            <!-- Policy Assured Name -->
+            <div class="col-md-4">               
+                <label for="PolAssrName" class="control-label">Assurer Name <span class="text-danger">*</span></label>
+                <input type="text" name="objMotorPolicyEntity.PolAssrName" id="AssurerName" class="form-control" placeholder="Enter Assurer Name" value="@Model.objMotorPolicyEntity.PolAssrName" maxlength="120"  required/>
+                @Html.ValidationMessageFor(m => m.objMotorPolicyEntity.PolAssrName, "", new { @class = "text-danger" })
+            </div>
+
+            <!-- Assured Mobile -->
+            <div class="col-md-4">
+               
+                <label for="PolAssrMobile" class="control-label">Mobile Number <span class="text-danger">*</span></label>
+                <input type="tel" name="objMotorPolicyEntity.PolAssrMobile" id="MobileNumber" class="form-control" placeholder="Enter Mobile Number" value="@Model.objMotorPolicyEntity.PolAssrMobile" maxlength="12" required />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolAssrMobile)</span>
+
+            </div>
+        </div>
+        <div class="row mb-3">
+
+            <!-- Currency Code -->
+            <div class="col-md-4">
+                <label asp-for="PolCurrCode" class="form-label">Currency Code <span class="text-danger">*</span></label>
+                @Html.DropDownListFor(m => m.objMotorPolicyEntity.PolCurrCode, new SelectList(Model.ListCurrCode, "Value", "Text"), (object)new { @class = "form-control", @required = "required", id = "PolCurrCode" })
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolCurrCode)</span>
+            </div>
+
+            <!-- Gross FC Premium -->
+            <div class="col-md-4">
+                <label asp-for="PolGrossFCPrem" class="form-label">Gross FC Premium <span class="text-danger">*</span></label>
+                <input id="PolGrossFCPrem"
+                       name="objMotorPolicyEntity.PolGrossFcPrem"
+                       class="form-control numberText"
+                       type="text"
+                       value="@Model.objMotorPolicyEntity.PolGrossFcPrem"
+                       required
+                       style="text-align: right;"
+                       placeholder="Enter Policy FC Premium"
+                       oninput="limitDecimalAndFormat(this)" />
+                <span class="text-danger" id="txtFcError">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolGrossFcPrem)</span>
+            </div>
+
+
+            <!-- Gross LC Premium -->
+            <div class="col-md-4">
+                <label asp-for="PolGrossLCPrem" class="form-label">Gross LC Premium</label>
+                <input id="PolGrossLCPrem" name="objMotorPolicyEntity.PolGrossLcPrem" class="form-control numberText" type="text" value="@Model.objMotorPolicyEntity.PolGrossLcPrem" readonly  style="text-align: right;" required />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolGrossLcPrem)</span>
+
+            </div>
+        </div>
+
+        <div class="row mb-3">
+
+            <!-- Vehicle Make -->
+            <div class="col-md-4">
+                <label asp-for="PolVehMake" class="form-label">Vehicle Make <span class="text-danger">*</span></label>
+                @Html.DropDownListFor(m => m.objMotorPolicyEntity.PolVehMake, new SelectList(Model.ListVehMake, "Value", "Text"), (object)new { @class = "form-control", @required = "required", id = "PolVehMake" })
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolVehMake)</span>
+                <span asp-validation-for="PolVehMake" class="text-danger"></span>
+            </div>
+
+            <!-- Vehicle Model -->
+            <div class="col-md-4">
+                <label asp-for="PolVehModel" class="form-label">Vehicle Model <span class="text-danger">*</span></label>
+                @Html.DropDownListFor(
+                         m => m.objMotorPolicyEntity.PolVehModel,
+                         new SelectList(Model.ListVehModel, "Value", "Text"),
+                         new { @class = "form-control", id = "PolVehModel", @required = "required" }
+                         )
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolVehModel)</span>
+            </div>
+
+            <!-- Chassis Number -->
+            <div class="col-md-4">
+
+                <label for="PolVehChassisNo" class="control-label">Chassis No. <span class="text-danger">*</span></label>
+                <input type="text" name="objMotorPolicyEntity.PolVehChassisNo" maxlength="30" id="ChassisNo" class="form-control" placeholder="Enter Chassis Number" value="@Model.objMotorPolicyEntity.PolVehChassisNo" required/>
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolVehChassisNo)</span>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+
+            <!-- Engine Number -->
+            <div class="col-md-4">             
+                <label for="PolVehEngineNo" class="control-label">Engine No. <span class="text-danger">*</span></label>
+                <input type="text" name="objMotorPolicyEntity.PolVehEngineNo" maxlength="30" id="EngineNo" class="form-control" placeholder="Enter Engine Number" value="@Model.objMotorPolicyEntity.PolVehEngineNo" required />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolVehEngineNo)</span>
+            </div>
+
+            <!-- Registration Number -->
+            <div class="col-md-4">
+                
+                <label for="PolVehRegnNo" class="control-label">Registration No. <span class="text-danger">*</span></label>
+                <input type="text" name="objMotorPolicyEntity.PolVehRegnNo" id="RegNo" maxlength="30" class="form-control" placeholder="Enter Registration Number" value="@Model.objMotorPolicyEntity.PolVehRegnNo" required />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolVehRegnNo)</span>
+            </div>
+
+            <!-- Vehicle Value -->
+            <div class="col-md-4">
+                <label for="PolVehValue" class="control-label">Vehicle Value <span class="text-danger">*</span></label>
+                <input type="text" name="objMotorPolicyEntity.PolVehValue" id="VehicleValue" class="form-control numberText" placeholder="Enter Vehicle Value" value="@Model.objMotorPolicyEntity.PolVehValue" required style="text-align: right;" oninput="limitDecimalAndFormat(this)" />
+                <span class="text-danger" id="VehicleValueError">@Html.ValidationMessageFor(model => model.objMotorPolicyEntity.PolVehValue)</span>
+
+            </div>
+        </div>
+
+        @Html.HiddenFor(m => m.Mode)
+
+        <!-- Buttons -->        
+        <div class="row justify-content-center">
+            <div class="col-md-4 d-flex justify-content-center gap-2" >
+                <button type="submit" class="btn btn-primary" id="btnSave">
+                     Save
+                </button>
+                <button type="button" id="btnReset" class="btn btn-secondary btn-block" onclick="location.href='@Url.Action("PolicyEdit", "PolicyEdit", new { polUid = Model.objMotorPolicyEntity.PolUid })'"><i class="fas fa-undo mr-1"></i>Reset</button>
+
+            </div>
+        </div>
+
+    </form>
+</div>
+
+
+
+
+
+
+
+
+

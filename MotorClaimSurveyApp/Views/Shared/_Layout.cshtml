@@ -1,0 +1,155 @@
+﻿@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    string ptyType = HttpContextAccessor.HttpContext.Session.GetString("PtyType");
+    string Username = HttpContextAccessor.HttpContext.Session.GetString("UserName");
+}
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MotorClaimSurveyApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MotorClaimSurveyApp.styles.css" asp-append-version="true" />
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light custom-navbar border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Motor Claim Survey App</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar- collapse" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        @* <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li> *@
+
+                        @if (ptyType == "U")
+                        {
+                            <!-- Dropdown for  Master -->
+
+                            <li class="nav-item dropdown" >
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownCodeMaster" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Master
+                                </a>
+
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownCodeMaster">
+                                    <li><a class="dropdown-item" href="~/Master/CodesMaster/CodesMasterListing">Codes Master</a></li>
+                                    <li><a class="dropdown-item" href="~/Master/UserMaster/UserMasterListing">User Master</a></li>
+                                    <li><a class="dropdown-item" href="~/Master/ErrorCodeMaster/ErrorCodeMasterListing">Error Code Master</a></li>
+                                </ul>
+
+                            </li>
+
+                            <!-- Dropdown for Transaction -->
+                            <li class="nav-item dropdown" >
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownCodeMaster" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Transaction
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownCodeMaster">
+                                    <li><a class="dropdown-item" href="~/Transaction/PolicyListing/PolicyListing">Policy</a></li>
+                                    <li><a class="dropdown-item" href="~/Transaction/ClaimListing/ClaimListing">Claim</a></li>
+                                </ul>
+                            </li>
+
+                           @*  <!-- Dropdown for statistics -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownStatistics" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Statistics
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownStatistics">
+                                    <li><a class="dropdown-item" href="~/Dashboard/Index">View Statistics</a></li>
+                                    
+                                </ul>
+                            </li> *@
+                        }
+
+                        @if (ptyType == "S")
+                        {
+                            <!-- Dropdown for Survey Transaction -->
+                            <li class="nav-item dropdown" >
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownSurveyTransaction" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Transaction
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownSurveyTransaction">
+                                    <li><a class="dropdown-item" href="~/Transaction/SurveyHdr/SurveyListing">Survey</a></li>
+                                </ul>
+                            </li>
+                           @*  <!-- Dropdown for statistics -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownStatistics" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Statistics
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownStatistics">
+                                    <li><a class="dropdown-item" href="~/Dashboard/SurveyIndex">View Statistics</a></li>
+
+                                </ul>
+                            </li> *@
+
+                        }
+                    </ul>
+
+
+                    <!-- Logout button -->
+
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item" style="padding: 7px;">
+                            <span class="navbar-text text-light" style="padding: 10px;">
+                                
+                                    <i class="fas fa-user"></i>
+                                    &nbsp;
+                                @if (ptyType == "U")
+                                {
+                                    <b>Employee</b>
+                                }
+                                else @if(ptyType=="S")
+                                {
+                                    <b>Surveyor</b>
+                                }
+                            </span>
+                        </li>
+                        <form asp-area="" asp-controller="Home" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-danger">Logout</button>
+                        </form>
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2024 - MotorClaimSurveyApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

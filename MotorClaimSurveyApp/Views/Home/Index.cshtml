@@ -1,0 +1,267 @@
+﻿@model StatisticsModel
+
+@{
+    Layout = "_Layout";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy and Claim Status Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to right, #dfdceb, #dfdceb);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            color: #343a40;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 40px;
+        }
+
+        .chart-container {
+            max-width: 320px;
+            margin: 15px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .chart-container:hover {
+                transform: translateY(-10px); /* Slight hover effect */
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            }
+
+        h3 {
+            text-align: center;
+            color: #495057;
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+        }
+
+        canvas {
+            max-height: 300px;
+            transition: transform 0.3s ease;
+        }
+
+        .chart-container {
+            max-width: 100%;
+            padding: 15px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: #003366; /* Navy Blue */
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            padding: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+
+            h2:hover {
+                color: #002244; /* Slightly darker navy for hover effect */
+                transform: translateY(-5px); /* Subtle lift effect on hover */
+            }
+
+    </style>
+</head>
+<body>
+    <h2>POLICY & CLAIM STATUS OVERVIEW</h2>
+    <div class="dashboard">
+        <!-- Policy Status Chart -->
+        <div class="chart-container">
+            <h3>Policy Status</h3>
+            <canvas id="policyChart"></canvas>
+        </div>
+
+        
+
+        <!-- Line Chart for Policies by Issue Date -->
+        <div class="chart-container">
+            <h3>Policy Count Statistics</h3>
+            <canvas id="lineChart"></canvas>
+        </div>
+
+        <!-- Claim Status Chart -->
+        <div class="chart-container">
+            <h3>Claim Status</h3>
+            <canvas id="claimChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Policy Chart Data
+        const policyData = {
+            labels: ['Approved Policies', 'Unapproved Policies'],
+            datasets: [{
+                label: 'Policy Status',
+                data: [@Model.ApprPolicyCount, @Model.UnApprPolicyCount], // Bind dynamically
+                backgroundColor: ['#000080', '#FFCC00'], // Green and red
+                borderColor: ['#ffffff', '#ffffff'],
+                borderWidth: 2
+            }]
+        };
+
+        // Claim Chart Data
+        const claimData = {
+            labels: ['Approved Claims', 'Pending Claims', 'Rejected Claims'],
+            datasets: [{
+                label: 'Claim Status',
+                data: [@Model.ApprClaimCount, @Model.PendingClaimCount, @Model.RejClaimCount], // Bind dynamically
+                backgroundColor: ['#000080', '#FFCC00', '#dc3545'], // Blue, yellow, red
+                borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+                borderWidth: 2
+            }]
+        };
+
+        // Line Chart Data for Policies by Issue Date
+        const lineChartData = {
+            labels: @Html.Raw(Json.Serialize(Model.PolicyDates)), // Bind dates dynamically
+            datasets: [{
+                label: '',
+                data: @Html.Raw(Json.Serialize(Model.PolicyCounts)), // Bind counts dynamically
+                borderColor: '#000080', // Navy blue line color
+                backgroundColor: 'rgba(0, 0, 128, 0.1)',  // Light blue background
+                borderWidth: 2,
+                fill: true
+            }]
+        };
+
+        // Policy Chart Config
+        const policyConfig = {
+            type: 'doughnut',
+            data: policyData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, family: 'Segoe UI' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                layout: { padding: 5 },
+                cutout: '55%'
+            }
+        };
+
+        // Claim Chart Config
+        const claimConfig = {
+            type: 'doughnut',
+            data: claimData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, family: 'Segoe UI' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                layout: { padding: 5 },
+                cutout: '55%'
+            }
+        };
+
+        // Line Chart Config
+        const lineChartConfig = {
+            type: 'line',
+            data: lineChartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: '',
+                        labels: {
+                            font: { size: 10, family: 'Segoe UI' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                return `Policies: ${value}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Policy Issue Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Number of Policies'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+
+        // Initialize Policy Chart
+        const policyCtx = document.getElementById('policyChart').getContext('2d');
+        new Chart(policyCtx, policyConfig);
+
+        // Initialize Claim Chart
+        const claimCtx = document.getElementById('claimChart').getContext('2d');
+        new Chart(claimCtx, claimConfig);
+
+        // Initialize Line Chart
+        const lineCtx = document.getElementById('lineChart').getContext('2d');
+        new Chart(lineCtx, lineChartConfig);
+    </script>
+
+</body>
+</html>

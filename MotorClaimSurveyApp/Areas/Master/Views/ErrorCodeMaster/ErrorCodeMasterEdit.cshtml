@@ -1,0 +1,197 @@
+﻿@using MotorClaimSurveyApp.Areas.Master.ViewModels
+@model ErrorCodeMasterViewModel
+@{
+    Layout = "_Layout";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Success',
+                '@TempData["SuccessMessage"]',
+                'success'
+            ).then(() => {
+            $.post('/Transaction/ClaimEdit/ClearSuccessMessage')
+                .done(function () {
+                    console.log("TempData cleared successfully");
+                })
+                .fail(function () {
+                    console.error("Failed to clear TempData");
+                });
+        });
+        };
+
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Failed',
+                '@TempData["ErrorMessage"]',
+                'failed'
+            )
+        };
+
+    </script>
+}
+
+<style>
+    .btn-primary {
+        background-color: navy;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container">
+    <div class="card">
+        <div class="d-flex justify-content-between align-items-start">
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Master/ErrorCodeMaster/ErrorCodeMasterListing';">Back</button>
+            <h3 style="color:navy">ERROR CODE MASTER ENTRY</h3>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Master/ErrorCodeMaster/ErrorCodeMasterEdit';">Add</button>
+        </div>
+        <div class="card-body">
+            <form action="/Master/ErrorCodeMaster/ErrorCodeMasterEdit" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    @if (Model.Mode != "U")
+                    {
+                        <!-- Input for Code -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtCode" class="control-label">Code<span class="text-danger">*</span></label>
+                                <input type="text" name="ErrorCodeMasterEntity.ErrCode" id="txtCode" class="form-control" placeholder="Enter Code" value="@Model.ErrorCodeMasterEntity.ErrCode" maxlength="12" oninput="transformInputValue(this)" required />
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.ErrorCodeMasterEntity.ErrCode)</span>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown for Type -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtType" class="control-label">Type<span class="text-danger">*</span></label>
+                                @Html.DropDownListFor(m => m.ErrorCodeMasterEntity.ErrType, new SelectList(Model.ListErrType, "Value", "Text"), new { @class = "form-control", @required = "required", @id = "txtType" })
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.ErrorCodeMasterEntity.ErrType)</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Readonly Input for Code -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtCode" class="control-label">Code<span class="text-danger">*</span></label>
+                                <input type="text" name="ErrorCodeMasterEntity.ErrCode" id="txtCode" class="form-control" placeholder="Enter Code" value="@Model.ErrorCodeMasterEntity.ErrCode" required maxlength="12" oninput="transformInputValue(this)" readonly />
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.ErrorCodeMasterEntity.ErrCode)</span>
+                            </div>
+                        </div>
+
+                        <!-- Disabled Dropdown for Type -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtType" class="control-label">Type<span class="text-danger">*</span></label>
+                                @Html.DropDownListFor(m => m.ErrorCodeMasterEntity.ErrType, new SelectList(Model.ListErrType, "Value", "Text"), new { @class = "form-control", @disabled = "disabled", @id = "txtType" })
+                                @Html.HiddenFor(m => m.ErrorCodeMasterEntity.ErrType)
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.ErrorCodeMasterEntity.ErrType)</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Input for Description -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="ErrDesc" class="control-label">Description</label>
+                            <input type="text" name="ErrorCodeMasterEntity.ErrDesc" id="ErrDesc" class="form-control" placeholder="Enter Description" value="@Model.ErrorCodeMasterEntity.ErrDesc?.Trim()" maxlength="120" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <!-- Submit Button -->
+                <div class="row justify-content-center">
+                    <div class="col-md-4 d-flex justify-content-center gap-2">
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Submit
+                        </button>
+                        <button type="reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Hidden field for Mode -->
+                @Html.HiddenFor(m => m.Mode)
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+
+    // document.getElementById("txtCode").oninvalid = function (event) {
+    //      event.target.setCustomValidity("Please select a Survey Location.");
+    //  };
+
+    //  document.getElementById("txtCode").oninput = function (event) {
+    //      event.target.setCustomValidity(""); // Clear the custom message on valid input
+    //  };
+
+
+        $(document).on('change', '#txtCode', function () {
+        var code = $('#txtCode').val();
+
+        console.log("Code: " + code);
+
+        if (code) {
+            $.ajax({
+                type: "POST",
+                url: "/Master/ErrorCodeMaster/CheckIfCodeExists",
+                data: { pCode: code }, // Only sending the code parameter
+                dataType: "json",
+                success: function (response) {
+                    console.log(response);
+                    if (response.success === true) {
+                        Swal.fire({
+                            title: "Warning",
+                            text: response.message,
+                            icon: "warning",
+                            confirmButtonText: "OK"
+                        });
+                        $("#txtCode").val(""); // Clear the code field
+                    } else {
+                        $("#codeExistsMessage").hide(); // Hide any related messages if applicable
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error: " + status + " " + error);
+                }
+            });
+        } else {
+            console.log("Code must be filled in");
+        }
+    });
+
+
+
+        function transformInputValue(inputElement) {
+        inputElement.value = inputElement.value.trim().toUpperCase();
+    }
+
+        function limitToTwoDecimalPlaces(input) {
+        const regex = /^\d+(\.\d{0,2})?$/;
+        if (!regex.test(input.value)) {
+            input.value = input.value.slice(0, -1);
+        }
+    }
+
+</script>
+

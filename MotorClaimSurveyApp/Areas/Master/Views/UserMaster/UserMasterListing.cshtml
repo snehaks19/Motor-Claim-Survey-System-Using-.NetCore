@@ -1,0 +1,269 @@
+﻿@using MotorClaimSurveyApp.Areas.Master.ViewModels
+@{
+    Layout = "_Layout";
+}
+
+@model UserMasterViewModel
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Success',
+                '@TempData["SuccessMessage"]',
+                'success'
+            ).then(() => {
+            $.post('/Transaction/ClaimEdit/ClearSuccessMessage')
+                .done(function () {
+                    console.log("TempData cleared successfully");
+                })
+                .fail(function () {
+                    console.error("Failed to clear TempData");
+                });
+        });
+        };
+
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Failed',
+                '@TempData["ErrorMessage"]',
+                'failed'
+            )
+        };
+
+    </script>
+}
+<html>
+<head>
+    <style>
+        #gdCodes {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            #gdCodes th, #gdCodes td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+                font-size: 14px;
+            }
+
+            #gdCodes th {
+                /* background-color: lightblue; */
+
+                background-color: #a8d8ea;
+                color: #003366;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes td {
+                background-color: #f4f8fb;
+                color: #00264d;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes tr:hover {
+                background-color: lightgrey;
+            }
+
+        body {
+            background-color: white !important;
+        }
+
+        #btnadd {
+            padding-left: 88.5%;
+        }
+
+        .btn-primary {
+            background-color: navy;
+        }
+    </style>
+    <title>
+    </title>
+
+</head>
+<body>
+    <br />
+    <div class="container">
+        <form asp-controller="UserMaster" asp-action="UserMasterEdit" style="display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Home/Index';">Back</button>
+            <h2 style="text-align:center; color:navy">USER MASTER LISTING</h2>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Master/UserMaster/UserMasterEdit';">Add</button>
+        </form>
+        <br />
+        <div id="VoucherTable">
+            <table id="gdCodes" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>NAME</th>
+                        <th>TYPE</th>
+                        <th>ACTIVE Y/N</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="//cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css" rel="stylesheet" />
+    @section Scripts {
+        <script src="//cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script>
+            $(document).ready(function () {
+
+                $('#gdCodes').DataTable(
+                    {
+                        ajax: {
+                            url: "/Master/UserMaster/UserMasterListBinding",
+                            type: "POST",
+                            datatype: "json",
+                        },
+                        processing: true,
+                        serverSide: true,
+                        filter: true,
+                        ordering: false,
+                        columnDefs: [{
+                            targets: [0],
+                            visible: true,
+                            searchable: true
+                        }],
+                        columnDefs: [
+                                 {
+                                        targets: [0], // CM_TYPE
+
+                                        width: "120px", // Set the desired width (e.g., 100px)
+                                        className: "text-left" // Align text to the left
+                                 },
+                                {
+                                    targets: [3], // CM_TYPE
+                      
+                                    width: "20px", // Set the desired width (e.g., 100px)
+                                    className: "text-left" // Align text to the left
+                                },
+                        
+                                {
+                                targets: [4], // CM_TYPE
+
+                                width: "120px", // Set the desired width (e.g., 100px)
+                                className: "text-left" // Align text to the left
+                                },
+                                    {
+                                    targets: [2], // CM_TYPE
+
+                                    width: "200px", // Set the desired width (e.g., 100px)
+                                    className: "text-left" // Align text to the left
+                                    },
+
+                                {
+                                    targets: [1], // CM_TYPE
+
+                                    width: "200px", // Set the desired width (e.g., 100px)
+                                    className: "text-left" // Align text to the left
+                                }
+                        ],
+                        columns: [
+                            { "data": "USER_ID", "name": "USER_ID" },
+                            { "data": "USER_NAME", "name": "USER_NAME" },
+                            { "data": "USER_TYPE", "name": "USER_TYPE" },
+                            { "data": "USER_ACTIVE_YN", "name": "USER_ACTIVE_YN" },
+                            
+
+                            {
+                                data: null,
+                                render: function (data, type, row) {
+                                    var userId = row.USER_ID;
+
+                                var deleteButton = '<a href="#" onclick="return DeleteCodes(\'' + userId + '\')" class="btn-img"><i class="fa fa-trash" style="font-size: 18px; color: red;"></i></a>';
+                            var editButton = '<div style="text-align: center;"><a href="#" onclick="return EditUser(\'' + userId + '\')" class="btn-img"><i class="fa fa-edit" style="font-size: 18px; color: blue;"></i></a>';
+                             return  editButton + ' ' + deleteButton;                           }
+                            }
+
+
+                        ]
+                    }
+
+                );
+            });
+            function EditUser(id) {
+                window.location.href = '/Master/UserMaster/UserMasterEdit?id=' + id ;
+                return false;
+               }
+
+                        function DeleteCodes(userId) {
+                // Fetch confirmation message from your API (optional)
+                $.ajax({
+                    url: '/Master/ErrorCodeMaster/GetDeleteConfirmationMessage',
+                    type: 'GET',
+                    success: function (response) {
+                        // Show the confirmation dialog with the dynamic message
+                        Swal.fire({
+                            title: 'warning',
+                            text: response.message,    // Fetch from response
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, delete it!',
+                            cancelButtonText: 'No, cancel!',
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                        }).then((result) => {
+                            // If the user confirmed, proceed with the deletion
+                            if (result.isConfirmed) {
+                                $.ajax({
+                                    url: '/Master/UserMaster/DeleteCode',
+                                    type: 'POST',
+                                    data: { userId: userId },
+                                    success: function (response) {
+                                        if (response.success) {
+                                            // Reload the DataTable
+                                            $('#gdCodes').DataTable().ajax.reload();
+
+                                            // Display the success message
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Success',
+                                                text: response.message
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+
+                return false;
+            }
+
+
+            function redirectToURL() {
+                // Get the form action URL
+
+                /*  var formAction = document.getElementById("redirectForm").getAttribute("asp-action");*/
+
+                // Perform the redirection
+                window.location.href = '';
+            }
+
+
+        </script>
+    }
+</body>
+</html>

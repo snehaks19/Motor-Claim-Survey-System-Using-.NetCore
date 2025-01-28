@@ -1,0 +1,238 @@
+﻿@using MotorClaimSurveyApp.Areas.Transaction.ViewModels
+@{
+    Layout = "_Layout";
+}
+
+@model PolicyViewModel
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Success',
+                '@TempData["SuccessMessage"]',
+                'success'
+            )
+        };
+
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Failed',
+                '@TempData["ErrorMessage"]',
+                'failed'
+            )
+        };
+
+    </script>
+}
+
+<html>
+<head>
+    <style>
+        #gdCodes {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            #gdCodes th, #gdCodes td {
+                white-space: nowrap; /* Prevent text wrapping */
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+                overflow: hidden; /* Trim any unwanted spaces */
+                text-overflow: ellipsis; /* Truncate text if it's too long */
+                font-size: 14px;
+            }
+
+            #gdCodes th {
+                /* background-color: lightblue; */
+
+                background-color: #a8d8ea;
+                color: #003366;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes td {
+                background-color: #f4f8fb;
+                color: #00264d;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes tr:hover {
+                background-color: lightgrey;
+            }
+
+        body {
+            background-color: white !important;
+            justify-content: center;
+        }
+
+        #btnadd {
+            padding-left: 88.5%;
+        }
+
+        .btn-primary {
+            background-color: navy;
+        }
+    </style>
+    <title>
+    </title>
+
+</head>
+<body>
+    <br />
+    <div class="container">
+        <form asp-controller="PolicyListing" asp-action="PolicyEdit" style="display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Home/Index';">Back</button>
+            <h2 style="text-align:center; color:navy">POLICY LISTING</h2>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Transaction/PolicyEdit/PolicyEdit';">Add</button>
+
+            @* <button type="submit" class="btn btn-success">Add</button> *@
+        </form>
+        <br />
+        <div id="VoucherTable">
+            <table id="gdCodes"  cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>POL_UID</th>
+                        <th>POLICY NO</th>
+                        <th>ISSUE DATE</th>
+                        <th>FROM DATE</th>
+                        <th>TO DATE</th>
+                        <th>NAME</th>
+                        <th>MAKE</th>
+                        <th>MODEL</th>
+                        <th>STATUS</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+  
+
+  
+    @section Scripts {
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="//cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script>
+                        $(document).ready(function () {
+                $("#gdCodes").DataTable({
+                    autoWidth: true,  // Automatically adjusts column widths
+                    ajax: {
+                        url: "/Transaction/PolicyListing/PolicyListBinding",
+                        type: "POST",
+                        datatype: "json",
+                    },
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    ordering: false,
+                    columnDefs: [
+                        {
+                            targets: [0],
+                            visible: true,
+                            searchable: true,
+                        },
+                    ],
+                            columnDefs: [
+                { targets: [0, 1,2,3,4,5,6,7,8,9], width: '70px' }, // Example: Set width for POL_UID and POL_NO
+                
+            ],
+                    columns: [
+                        { "data": "POL_UID", "name": "POL_UID", "visible": false },
+                        { "data": "POL_NO", "name": "POL_NO" },
+                        { "data": "POL_ISS_DT", "name": "POL_ISS_DT" },
+                        { "data": "POL_FM_DT", "name": "POL_FM_DT" },
+                        { "data": "POL_TO_DT", "name": "POL_TO_DT" },
+                        { "data": "POL_ASSR_NAME", "name": "POL_ASSR_NAME" },
+                        { "data": "POL_VEH_MAKE", "name": "POL_VEH_MAKE" },
+                        { "data": "POL_VEH_MODEL", "name": "POL_VEH_MODEL" },
+                        { data: "POL_APPR_STATUS", name: "POL_APPR_STATUS",
+                          render: function (data, type, row) {
+                              if (data === "Approved") {
+                                  return '<i class="fa fa-check-circle" style="color: green; display: inline-block; width: 100%; text-align: center;" title="Approved"></i>';
+                                          } else {
+                                  return '<i class="fa fa-times-circle" style="color: red; display: inline-block; width: 100%; text-align: center;" title="Not Approved"></i>'; // Icon for not approved
+                              }
+                          }
+                        },
+
+                        {
+                            data: null,
+                            render: function (data, type, row) {
+                                var id = row.POL_UID;
+                                if (row.POL_APPR_STATUS === "Approved") {
+                                    return '<div style="text-align: center;"><a href="#" onclick="return EditCodes(\'' + id + '\')" class="btn-img"><i class="fa fa-eye" style="font-size: 18px; color: blue;" title="View Policy"></i></a></div>';
+                                } else {
+                                 return '<a href="#" onclick="return EditCodes(\'' + id + '\')" class="btn-img" style="display: flex; justify-content: center;"><i class="fa fa-edit" style="font-size: 18px; color: blue;" title="Edit Policy"></i></a>';
+                                            }
+                            },
+                            width: "5%"  // Set width for action column if needed
+                        }
+                    ]
+                });
+            });
+            function EditCodes(id) {
+                window.location.href = '/Transaction/PolicyEdit/PolicyEdit?PolUid=' + id ;
+                return false;
+               }
+
+            function DeleteCodes(id) {
+                if (confirm('Are you sure you want to delete this code?')) {
+                    $.ajax({
+                        url: '/Transaction/PolicyListing/DeletePolicy',
+                        type: 'POST',
+                        data: { code: id},
+                        success: function (response) {
+                            if (response.success) {
+                                // Reload the DataTable
+                                $('#gdCodes').DataTable().ajax.reload();
+
+                                // Display the TempData success message
+                                var successMessage = 'Hello';
+                                if (successMessage) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Success',
+                                        text: successMessage
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+                return false;
+            }
+
+            function redirectToURL() {
+                // Get the form action URL
+
+                /*  var formAction = document.getElementById("redirectForm").getAttribute("asp-action");*/
+
+                // Perform the redirection
+                window.location.href = '';
+            }
+
+
+        </script>
+
+
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+        <link href="//cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css" rel="stylesheet" />
+    }
+</body>
+</html>

@@ -1,0 +1,1111 @@
+﻿@using MotorClaimSurveyApp.Areas.Transaction.ViewModels
+@model ClaimViewModel
+
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    Layout = "_Layout";
+    string userId = HttpContextAccessor.HttpContext.Session.GetString("UserId");
+    string userType = HttpContextAccessor.HttpContext.Session.GetString("PtyType");
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
+
+
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+        Swal.fire(
+        'Success',
+        '@TempData["SuccessMessage"]',
+        'success'
+        ).then(() => {
+        $.post('/Transaction/ClaimEdit/ClearSuccessMessage')
+        .done(function () {
+        console.log("TempData cleared successfully");
+        })
+        .fail(function () {
+        console.error("Failed to clear TempData");
+        });
+        });
+        };
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+                'Failed',
+                '@TempData["ErrorMessage"]',
+                'error'
+            ).then(() => {
+                $.post('/Transaction/ClaimEdit/ClearErrorMessage')
+                .done(function () {
+                    console.log("TempData for ErrorMessage cleared successfully");
+                })
+                .fail(function () {
+                    console.error("Failed to clear TempData for ErrorMessage");
+                });
+            });
+        };
+    </script>
+}
+
+<style>
+    .btn-primary {
+        background-color: navy;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+
+        function formatNumberWithCommas(input) {
+            var value = input.value.replace(/,/g, '');
+            if (!value.includes('.')) {
+                value = value + '.00';
+            } else {
+                var parts = value.split('.');
+                parts[1] = (parts[1] || '0').padEnd(2, '0');
+                value = parts.join('.');
+            }
+            input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        window.addEventListener('load', function() {
+            var fields = [
+                'txtVehVal'
+            ];
+
+            fields.forEach(function(fieldId) {
+                var field = document.getElementById(fieldId);
+                if (field) {
+                    formatNumberWithCommas(field);
+                }
+            });
+        });
+
+</script>
+
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script>
+
+        $(document).ready(function () {
+
+        var clmApprStatus = '@Model.motorClaimEntity.ClmApprStatus';
+        if (clmApprStatus === "A" || clmApprStatus === "R") {
+        $('input, select, textarea').prop('disabled', true);
+        $('#approveButton').hide();
+        $('#btnReject').hide();
+        
+        $('#btnSave').hide();
+        }
+        if (clmApprStatus === "R"){
+             $('#btnViewSurvey').hide();
+        }
+        var clmSurStatus = '@Model.motorClaimEntity.ClmSurCrYn';
+        if (clmSurStatus === 'Y') {
+        $('input, select, textarea').prop('disabled', true);
+        $('#btnSurvey').hide();
+        $('#btnSave').hide();
+        $('#btnReset').hide();
+        }
+
+        
+     
+
+
+        // pRINT BUTTON
+
+            $('#printButton').on('click', function () {
+           
+            var clmUid = $('#clmuid').val();
+            console.log('Claim UID:', clmUid);
+
+            var polNo = $('#ClmPolNo').val();
+            console.log('Policy Number:', polNo);
+
+      
+            if (polNo) {
+            
+                $.ajax({
+                    url: '@Url.Action("GetPolUid", "ClaimEdit")', 
+                    data: { policyNumber: polNo }, 
+                    type: 'GET', 
+                    success: function (response) {
+                        if (response.success) {
+
+                            console.log('Policy UID:', response.polUid);
+                            var polUid = response.polUid;
+
+                         
+                            if (clmUid) {
+                              
+                                $.ajax({
+                                    url: '/Transaction/ClaimEdit/ViewSurvey',
+                                    type: 'POST',
+                                    data: { clmUid: clmUid },
+                                    success: function (response) {
+                                        if (response.success) {
+                                            console.log('Survey UID:', response.surUid);
+                                            var surUid = response.surUid;
+
+                                           
+                                            const url = `http://192.168.1.62:130/Report/SurveyReport.aspx?clmUid=${clmUid}&polUid=${polUid}&surUid=${surUid}`;
+                                            console.log('Report URL:', url);
+
+
+                                            window.open(url, '_blank');
+                                        } else {
+                                            console.error('Failed to retrieve Survey UID');
+                                        }
+                                    },
+                                    error: function (xhr, status, error) {
+                                        console.error('Error fetching Survey UID:', error);
+                                    }
+                                });
+                            } else {
+                                console.error('Claim UID is required.');
+                            }
+                        } else {
+                            console.error('Failed to retrieve Policy UID');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching Policy UID:', error);
+                    }
+                });
+            } else {
+                console.error('Policy Number is required.');
+            }
+        });
+
+
+        //btn send to survey click
+
+        $('#btnSurvey').on('click', function () {
+        var clmUid = $('#clmuid').val();
+        var userID = '@userId';
+        var userType = '@userType';
+
+        $.ajax({
+        url: '@Url.Action("IntimateToSurvey", "ClaimEdit")',
+        type: 'POST',
+        data: { clmUid: clmUid, userID: userID,userType:userType },
+        success: function (response) {
+            console.log(response)
+        Swal.fire({
+        icon:response.icon,
+        title: response.title,
+        text: response.message  
+        });
+        $('input, textarea, select').prop('disabled', true);
+        if (response.title.toLowerCase() === 'success') { // Ensure case-insensitivity
+                 $('#btnSurvey').hide();
+                 $('#btnSave').hide();
+                  $('#btnReset').hide();
+             }
+        },
+        error: function (xhr, status, error) {
+        alert('An error occurred: ' + error);
+        }
+        });
+        });
+
+        //loss,reg,intm date validations
+
+        var today = new Date();
+        var day = today.getDate();
+        var month = today.getMonth() + 1;
+        var year = today.getFullYear();
+
+        var formattedDate = (day < 10 ? '0' + day : day) + '-'+
+        (month < 10 ? '0' + month : month) + '-' +
+        year;
+
+        if('@Model.Mode' != "U")
+        {
+
+        $("#txtClmLossDt").val(formattedDate);
+        $("#txtClmRegDt").val(formattedDate);
+        $("#txtClmIntmDt").val(formattedDate);
+
+        }
+
+        $("#txtClmLossDt").datepicker({
+        dateFormat: "dd-mm-yy",
+        maxDate: 0,
+        changeMonth: true,
+        changeYear: true,
+        onClose: function (selectedDate) {
+        validateLossDate(selectedDate);
+        }
+        });
+
+        $("#txtClmIntmDt").datepicker({
+        dateFormat: "dd-mm-yy",
+        changeMonth: true,
+        changeYear: true,
+        onClose: function () {
+        validateIntimationDate();
+        }
+        });
+
+        $("#txtClmRegDt").datepicker({
+        dateFormat: "dd-mm-yy",
+        changeMonth: true,
+        changeYear: true,
+        onClose: function () {
+        validateRegistrationDate();
+        }
+        });
+
+        function parseDate(dateString) {
+        const [day, month, year] = dateString.split('-').map(Number);
+        return new Date(year, month - 1, day);
+        }
+
+        function showError(inputId, message) {
+        $(`#${inputId}Error`).text(message);
+        }
+
+
+
+        $("#txtClmLossDt").datepicker({
+        dateFormat: "dd-mm-yy",
+        maxDate: 0,
+        changeMonth: true,
+        changeYear: true,
+        onClose: function (selectedDate) {
+        validateLossDate(selectedDate);
+        }
+        });
+
+        $("#txtClmIntmDt").datepicker({
+        dateFormat: "dd-mm-yy",
+        changeMonth: true,
+        changeYear: true,
+        onClose: function () {
+        validateIntimationDate();
+        }
+        });
+
+        $("#txtClmRegDt").datepicker({
+        dateFormat: "dd-mm-yy",
+        changeMonth: true,
+        changeYear: true,
+        onClose: function () {
+        validateRegistrationDate();
+        }
+        });
+
+        function parseDate(dateString) {
+        if (!dateString) return null;
+        const parts = dateString.split('-');
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; 
+        const year = parseInt(parts[2], 10);
+        return new Date(year, month, day);
+        }
+
+        function showError(inputId, message) {
+        $(`#${inputId}Error`).text(message);
+        }
+
+        // Validation Functions
+
+        function validateLossDate(selectedDate) {
+        const policyFromDate = parseDate($("#txtClmPolFmDt").val());
+        const policyToDate = parseDate($("#txtClmPolToDt").val());
+        const lossDate = parseDate(selectedDate);
+
+        // if lossDate > today
+
+        if (lossDate > today) {
+        $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage1', function(response) {
+                Swal.fire({
+                    title: 'Warning',
+                    text: response.message ,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) $("#txtClmLossDt").val("");  
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        } else {
+            showError("txtClmLossDt", "");
+        }
+
+       // Invalid Date
+
+       if (!selectedDate || isNaN(lossDate)) {
+            $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage4', function(response) {
+                Swal.fire({
+                    title: 'Warning',
+                    text: response.message,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) {
+                        $("#txtClmLossDt").val("");  // Clear field if message fetched
+                    }
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        } else {
+            showError("txtClmLossDt", "");
+        }
+
+          // Loss Date between policy from date and to date
+
+
+        if (lossDate < policyFromDate || lossDate > policyToDate) {
+            $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage', function(response) {
+                Swal.fire({
+                    title: 'Warning',
+                    text: response.message ,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) $("#txtClmLossDt").val("");  // Clear field if message fetched
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        } else {
+            showError("txtClmLossDt", "");
+        }
+
+        }
+        //intimation date validations
+
+        function validateIntimationDate() {
+        const lossDate = parseDate($("#txtClmLossDt").val());
+        const intimationDate = parseDate($("#txtClmIntmDt").val());
+
+        if(intimationDate < lossDate){
+            $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage2', function(response) {
+                Swal.fire({
+                    title: 'Warning',
+                    text: response.message ,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) $("#txtClmIntmDt").val("");  // Clear field if message fetched
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        } else {
+            showError("txtClmIntmDt", "");
+        }
+
+
+        if (!$("#txtClmLossDt").val()) {
+            $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage3', function(response) {
+                Swal.fire({
+                    title: 'Warning',
+                    text: response.message ,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) $("#txtClmIntmDt").val("");  
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        } else {
+            showError("txtClmIntmDt", "");
+        }
+
+
+
+
+         if (isNaN(intimationDate)) {
+             $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage4', function(response) {
+                 Swal.fire({
+                     title: 'Warning',
+                     text: response.message,
+                     icon: 'warning',
+                     confirmButtonText: 'OK'
+                 }).then(() => {
+                     if (response.success) {
+                          $("#txtClmIntmDt").val("");  // Clear field if message fetched
+                     }
+                 });
+             }).fail(function() {
+                 Swal.fire({
+                     title: 'Error',
+                     text: 'Failed to retrieve error message.',
+                     icon: 'error',
+                     confirmButtonText: 'OK'
+                 });
+             });
+         } else {
+              showError("txtClmIntmDt", "");
+         }
+
+
+
+        }
+
+        function validateRegistrationDate() {
+        const lossDate = parseDate($("#txtClmLossDt").val());
+        const registrationDate = parseDate($("#txtClmRegDt").val());
+
+        if(registrationDate < lossDate){
+            $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage5', function(response) {
+                Swal.fire({
+                    title: 'Warning',
+                    text: response.message ,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) $("#txtClmRegDt").val("");  // Clear field if message fetched
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        } else {
+            showError("txtClmRegDt", "");
+        }
+
+
+
+
+
+        if (!$("#txtClmLossDt").val()) {
+            $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage3', function(response) {
+                Swal.fire({
+                    title: 'Warning',
+                    text: response.message ,
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (response.success) $("#txtClmRegDt").val("");  // Clear field if message fetched
+                });
+            }).fail(function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to retrieve error message.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        } else {
+            showError("txtClmRegDt", "");
+        }
+
+
+
+
+         if (isNaN(registrationDate)){
+             $.get('/Master/ErrorCodeMaster/GetLossDateErrorMessage4', function(response) {
+                 Swal.fire({
+                     title: 'Warning',
+                     text: response.message,
+                     icon: 'warning',
+                     confirmButtonText: 'OK'
+                 }).then(() => {
+                     if (response.success) {
+                          $("#txtClmRegDt").val("");  // Clear field if message fetched
+                     }
+                 });
+             }).fail(function() {
+                 Swal.fire({
+                     title: 'Error',
+                     text: 'Failed to retrieve error message.',
+                     icon: 'error',
+                     confirmButtonText: 'OK'
+                 });
+             });
+         } else {
+              showError("txtClmRegDt", "");
+         }
+
+
+
+        }
+
+
+       
+        //View Survey button click
+
+        $('#btnViewSurvey').on('click', function () {
+        var clmUid = $('#clmuid').val();
+
+        if (!clmUid) {
+        alert("Claim UID is required.");
+        return;
+        }
+
+        console.log("Claim UID:", clmUid);
+
+        $.ajax({
+        url: '/Transaction/ClaimEdit/ViewSurvey',
+        type: 'POST',
+        data: { clmUid: clmUid },
+        success: function (response) {
+
+        if (response.success) {
+
+
+        window.location.href = '/Transaction/SurveyHdr/SurveyEdit2?surUid=' + response.surUid;
+        } else {
+        alert('Operation failed: ' + response.message);
+        }
+        },
+        error: function (xhr, status, error) {
+        console.error('AJAX Error:', xhr);
+        alert('An error occurred: ' + error);
+        }
+        });
+        });
+
+
+        // When Policy Number changes, fetch policy details
+
+        $('#ClmPolNo').change(function () {
+
+        var policyNumber = $(this).val();
+        if (policyNumber) {
+        $.ajax({
+        url: '@Url.Action("GetPolicyDetails", "ClaimEdit")',
+        data: { policyNumber: policyNumber },
+        success: function (response) {
+        if (response.error) {
+        alert(response.error);
+        } else {
+        console.log(response);
+
+        // Format dates to dd-MM-yyyy
+        const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const day = ('0' + date.getDate()).slice(-2);
+        const month = ('0' + (date.getMonth() + 1)).slice(-2); 
+        const year = date.getFullYear();
+        return `${day}-${month}-${year}`;
+        };
+
+        $('#txtClmPolFmDt').val(formatDate(response.clmPolFmDt));
+        $('#txtClmPolToDt').val(formatDate(response.clmPolToDt));
+        $('#txtname').val(response.clmPolAssrName);
+        $('#txtMobile').val(response.clmPolAssrMob);
+
+        $('#ddlVehMake').prop('disabled', false).val(response.clmVehMake);
+        $('#ddlVehModel').prop('disabled', false);
+
+        $.ajax({
+        url: '@Url.Action("GetVehicleModels", "ClaimEdit")',
+        type: 'POST',
+        data: { vehicleMake: response.clmVehMake },
+        success: function (modelResponse) {
+        if (modelResponse) {
+        console.log(modelResponse);
+        var modelOptions = '<option value="">Select Model</option>';
+        modelResponse.forEach(function (model) {
+        modelOptions += '<option value="' + model.value + '">' + model.text + '</option>';
+        });
+        $('#ddlVehModel').html(modelOptions).val(response.clmVehModel);
+        }
+        }
+        });
+
+        $('#txtChassissNo').val(response.clmVehChassisNo);
+        $('#txtEngNo').val(response.clmVehEngineNo);
+        $('#txtRegNo').val(response.clmVehRegnNo);
+        var vehicleValue = parseFloat(response.clmVehValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    $('#txtVehVal').val(vehicleValue);
+        }
+        },
+        error: function () {
+        alert('Error occurred while fetching policy details.');
+        }
+        });
+        }
+        });
+
+        $('#txtClmPolRepNo').on('blur', function () {
+        var reportNo = $(this).val().trim();
+        // var clmUid = new URLSearchParams(window.location.search).get("clmUid"); // Retrieve clmUid from query params
+        var clmUid = $('#clmuid').val();
+
+        console.log(reportNo)
+        console.log(clmUid)
+
+        if (reportNo) {
+        $.ajax({
+        type: "POST",
+        url: "/Transaction/ClaimEdit/CheckPoliceReportNumber", 
+        data: { reportNo: reportNo, clmUid: clmUid },
+        dataType: "json",
+        success: function (response) {
+        if (response.success === true) {
+        if(clmUid){
+        console.log(response.oldNo)
+        Swal.fire({
+        icon: 'warning',
+        title: 'Warning!',
+        text: response.message,
+        });
+
+        // Clear the input field
+        $("#txtClmPolRepNo").val(response.oldNo);
+        }
+        else{
+        Swal.fire({
+        icon: 'warning',
+        title: 'Warning!',
+        text: response.message,
+        });
+
+        // Clear the input field
+        $("#txtClmPolRepNo").val("");
+        }
+
+        } else {
+
+
+        return;
+        }
+
+        },
+        error: function (xhr, status, error) {
+        console.error("Error: " + status + " " + error);
+        Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: 'An error occurred while validating the Police Report Number.',
+        });
+        }
+        });
+        }
+        });
+
+        });
+    </script>
+}
+
+<script>
+
+        function showApprovalConfirmation(approveUrl) {
+        var clmUid = $('#clmuid').val(); 
+        var userType = '@userType';
+        console.log(approveUrl);
+        console.log(userType);
+
+        if (userType !== "U") {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'You are not authorized to approve this claim.'
+        });
+        return; 
+    }
+  
+        $.ajax({
+            url: '/Master/ErrorCodeMaster/GetClaimApprConfirmationMsg', 
+            method: 'GET',
+            success: function (response) {
+                
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: response.message, 
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, approve it!',
+                    cancelButtonText: 'No, cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                     
+                        $.ajax({
+                            url: approveUrl, 
+                            type: 'POST',
+                            data: { clmUid: clmUid },
+                            success: function (response) {
+                                console.log("Response received:", response);
+                                if (response.success) {
+                                    
+                                    window.location.href = '/Transaction/ClaimEdit/ClaimEdit?clmUid=' + clmUid;
+                                    $('input, select, textarea').prop('disabled', true);
+                                    $('#approveButton').hide();
+                                    $('#btnReject').hide();
+                                    $('#btnSave').hide();
+                                } else {
+                                    // Show failure alert
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Approval failed',
+                                        text: response.message || 'Please try again.'
+                                    });ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                console.error(`Error: ${error}, Response: ${xhr.responseText}`);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Request Error',
+                                    text: 'There was an error with the request. Check the console for details.'
+                                });
+                            }
+                        });
+                    }
+                });
+            },
+            error: function () {
+                // Handle error when fetching confirmation message
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Unable to fetch confirmation message.'
+                });
+            }
+        });
+    }
+
+
+        function showRejectionConfirmation(approveUrl) {
+        var clmUid = $('#clmuid').val();
+         var userType = '@userType';
+        console.log(approveUrl);
+
+        if (userType !== "U") {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'You are not authorized to reject this claim.'
+        });
+        return;
+        }
+        $.ajax({
+            url: '/Master/ErrorCodeMaster/GetClaimRejectionMsg',
+            method: 'GET',
+            success: function (response) {
+               
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: response.message, 
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Reject it!',
+                    cancelButtonText: 'No, cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                      
+                        $.ajax({
+                            url: approveUrl, 
+                            type: 'POST',
+                            data: { clmUid: clmUid },
+                            success: function (response) {
+                                console.log("Response received:", response);
+                                if (response.success) {
+                              
+                                    window.location.href = '/Transaction/ClaimEdit/ClaimEdit?clmUid=' + clmUid;
+                                    $('input, select, textarea').prop('disabled', true);
+                                    $('#approveButton').hide();
+                                    $('#btnReject').hide();
+                                    $('#btnViewSurvey').hide();
+                                    $('#btnSave').hide();
+                                } else {
+                                    // Show failure alert
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Approval failed',
+                                        text: response.message || 'Please try again.'
+                                    });
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                console.error(`Error: ${error}, Response: ${xhr.responseText}`);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Request Error',
+                                    text: 'There was an error with the request. Check the console for details.'
+                                });
+                            }
+                        });
+                    }
+                });
+            },
+            error: function () {
+               
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Unable to fetch confirmation message.'
+                });
+            }
+        });
+    }
+
+
+</script>
+
+<div class="heads">
+    <div class="d-flex justify-content-between align-items-start">
+        <button class="btn btn-primary back" type="button" onclick="window.location.href='/Transaction/ClaimListing/ClaimListing';">Back</button>
+
+    </div>
+    <h2>@ViewData["Title"]</h2>
+</div>
+<div class="container bg-light p-4 shadow rounded">
+    <h3 class="text-center mb-4 " style=" color:navy" ">CLAIM FORM</h3><br>
+    @if (Model.motorClaimEntity.ClmApprStatus == "A")
+    {
+        <label class="badge bg-success">Approved</label>
+        <br />
+        <br />
+    }
+    else if (Model.motorClaimEntity.ClmApprStatus == "R")
+    {
+        <label class="badge bg-danger">Rejected</label>
+        <br />
+        <br />
+    }
+    else if (Model.motorClaimEntity.ClmApprStatus == "N")
+    {
+        <label class="badge bg-warning">Pending</label>
+        <br />
+        <br />
+    }
+
+    <form id="claimForm" action="@Url.Action("ClaimEdit", "ClaimEdit", new { clmuid = Model.motorClaimEntity.ClmUid })" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="userType" value="@userType" />
+        <div class="row mb-3">
+            <input type="hidden" name="motorClaimEntity.ClmUid" id="clmuid" value="@Model.motorClaimEntity.ClmUid" />
+            <label id="lblSurveyNo" style="color: red; font-weight: bold; padding-inline-end: 50px; display: none;"></label>
+
+            <!-- claim Number -->
+            <div class="col-md-4">
+                <label asp-for="ClmNo" class="form-label">Claim Number </label>
+                <input type="text" name="motorClaimEntity.ClmNo" class="form-control" maxlength="30" value="@Model.motorClaimEntity.ClmNo" readonly />
+                <span asp-validation-for="ClmNo" class="text-danger"></span>
+            </div>
+            <!-- policy no -->
+            <div class="col-md-4">
+                <label asp-for="ClmPolNo" class="form-label">Policy Number <span class="text-danger">*</span></label>
+                @Html.DropDownListFor(m => m.motorClaimEntity.ClmPolNo, new SelectList(Model.ListPolicyNo, "Value", "Text"), (object)new { @class = "form-control", @required = "required", @readonly = "readonly", @id = "ClmPolNo" })
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmPolNo)</span>
+            </div>
+            <!-- Policy From Date -->
+            <div class="col-md-4">
+
+                <label for="ClmPolFmDt" class="control-label">Policy From Date </label>
+                <input name="motorClaimEntity.ClmPolFmDt" id="txtClmPolFmDt" class="form-control" value="@(Model.motorClaimEntity.ClmPolFmDt.ToString("dd-MM-yyyy"))" readonly />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmPolFmDt)</span>
+            </div>
+
+        </div>
+        <div class="row mb-3">
+            <!-- Policy To Date -->
+            <div class="col-md-4">
+                <label for="ClmPolToDt" class="control-label">Policy To Date </label>
+                <input name="motorClaimEntity.ClmPolToDt" id="txtClmPolToDt" class="form-control" value="@(Model.motorClaimEntity.ClmPolToDt.ToString("dd-MM-yyyy"))" readonly />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmPolToDt)</span>
+            </div>
+            <!-- Assured Name -->
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmPolAssrName" class="form-label">Assured Name</label>
+                <input type="text" id="txtname" name="motorClaimEntity.ClmPolAssrName" class="form-control" value="@Model.motorClaimEntity.ClmPolAssrName" readonly />
+                <span asp-validation-for="motorClaimEntity.ClmPolAssrName" class="text-danger"></span>
+            </div>
+            <!-- Assured Mobile -->
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmPolAssrMob" class="form-label">Assured Mobile</label>
+                <input type="text" id="txtMobile" name="motorClaimEntity.ClmPolAssrMob" class="form-control" maxlength="10" value="@Model.motorClaimEntity.ClmPolAssrMob" readonly />
+                <span asp-validation-for="motorClaimEntity.ClmPolAssrMob" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="row mb-3">
+
+            <!-- Loss Date -->
+
+            @if (Model.Mode != "U")
+            {              
+                <div class="col-md-4">
+                    <label for="ClmLossDt" class="control-label">Loss Date <span class="text-danger">*</span></label>
+                    <input name="motorClaimEntity.ClmLossDt" id="txtClmLossDt" class="form-control" value="@(Model.motorClaimEntity.ClmLossDt.ToString("dd-MM-yyyy"))" required placeholder="Enter Loss Date" maxlength="10"/>
+                    <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmLossDt)</span>
+                </div>
+            }
+            else
+            {
+                <div class="col-md-4">
+                    <label for="ClmLossDt" class="control-label">Loss Date </label>
+                    <input name="motorClaimEntity.ClmLossDt" id="txtClmLossDt" class="form-control" value="@(Model.motorClaimEntity.ClmLossDt.ToString("dd-MM-yyyy"))" required placeholder="Enter Loss Date" maxlength="10" disabled />
+                    <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmLossDt)</span>
+                    @Html.HiddenFor(m => m.motorClaimEntity.ClmLossDt)
+                </div>
+            }
+            <!-- Intimation Date -->
+
+            <div class="col-md-4">
+                <label for="ClmIntmDt" class="control-label">Intimation Date <span class="text-danger">*</span></label>
+                <input name="motorClaimEntity.ClmIntmDt" id="txtClmIntmDt" class="form-control" value="@(Model.motorClaimEntity.ClmIntmDt.ToString("dd-MM-yyyy"))" required maxlength="10" />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmIntmDt)</span>
+            </div>
+
+            <!-- Registration Date -->
+
+            <div class="col-md-4">
+                <label for="ClmRegDt" class="control-label">Registration Date <span class="text-danger">*</span></label>
+                <input name="motorClaimEntity.ClmRegDt" id="txtClmRegDt" class="form-control" value="@(Model.motorClaimEntity.ClmRegDt.ToString("dd-MM-yyyy"))" required maxlength="10" />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmRegDt)</span>
+            </div>
+        </div>
+        <div class="row mb-3">
+
+            <!-- Police Report Number -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmPolRepNo" class="form-label">Police Report No <span class="text-danger">*</span></label>
+                <input type="text" name="motorClaimEntity.ClmPolRepNo" class="form-control" maxlength="10" value="@Model.motorClaimEntity.ClmPolRepNo" id="txtClmPolRepNo" required placeholder="Enter Police Report No" />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmPolRepNo)</span>
+            </div>
+
+            <!-- Police Report Details -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmPolRepDtl" class="form-label">Police Report Details <span class="text-danger">*</span></label>
+                <input type="text" name="motorClaimEntity.ClmPolRepDtl" class="form-control" value="@Model.motorClaimEntity.ClmPolRepDtl" maxlength="120" required placeholder="Enter Police Report Details"  />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmPolRepDtl)</span>
+            </div>
+
+            <!-- Loss Description -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmLossDesc" class="form-label">Loss Description <span class="text-danger">*</span></label>
+                <input type="text" name="motorClaimEntity.ClmLossDesc" class="form-control" value="@Model.motorClaimEntity.ClmLossDesc" maxlength="120" placeholder="Enter Loss Description" required />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.motorClaimEntity.ClmLossDesc)</span>
+            </div>
+        </div>
+        <div class="row mb-3">
+
+            <!-- Vehicle Make -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmVehMake" class="form-label">Vehicle Make</label>
+                @Html.TextBoxFor(m => m.motorClaimEntity.ClmVehMake, new { @class = "form-control", @readonly = "readonly", id = "ddlVehMake" })
+                <span asp-validation-for="motorClaimEntity.ClmVehMake" class="text-danger"></span>
+            </div>
+
+            <!-- Vehicle Model -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmVehModel" class="form-label">Vehicle Model</label>
+                @Html.TextBoxFor(m => m.motorClaimEntity.ClmVehModel, new { @class = "form-control", @readonly = "readonly", id = "ddlVehModel" })
+                <span asp-validation-for="motorClaimEntity.ClmVehModel" class="text-danger"></span>
+            </div>
+
+            <!-- Chassis Number -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmVehChassisNo" class="form-label">Chassis Number</label>
+                <input type="text" id="txtChassissNo" name="motorClaimEntity.ClmVehChassisNo" class="form-control" value="@Model.motorClaimEntity.ClmVehChassisNo" readonly />
+                <span asp-validation-for="motorClaimEntity.ClmVehChassisNo" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="row mb-3">
+
+            <!-- Engine Number -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmVehEngineNo" class="form-label">Engine Number</label>
+                <input type="text" id="txtEngNo" name="motorClaimEntity.ClmVehEngineNo" class="form-control" value="@Model.motorClaimEntity.ClmVehEngineNo" readonly />
+                <span asp-validation-for="motorClaimEntity.ClmVehEngineNo" class="text-danger"></span>
+            </div>
+
+            <!-- Registration Number -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmVehRegnNo" class="form-label">Registration Number</label>
+                <input type="text" id="txtRegNo" name="motorClaimEntity.ClmVehRegnNo" class="form-control" value="@Model.motorClaimEntity.ClmVehRegnNo" readonly />
+                <span asp-validation-for="motorClaimEntity.ClmVehRegnNo" class="text-danger"></span>
+            </div>
+
+            <!-- Vehicle Value -->
+
+            <div class="col-md-4">
+                <label asp-for="motorClaimEntity.ClmVehValue" class="form-label">Vehicle Value</label>
+                <input type="text" id="txtVehVal" name="motorClaimEntity.ClmVehValue" class="form-control numberText" value="@Model.motorClaimEntity.ClmVehValue" readonly style="text-align: right;" />
+                <span asp-validation-for="motorClaimEntity.ClmVehValue" class="text-danger"></span>
+            </div>
+            @Html.HiddenFor(m => m.Mode)
+        </div>
+
+        <!-- Submit and Update Buttons -->
+
+        <div class="row justify-content-center">
+            <div class="col-md-4 d-flex justify-content-center">
+                @if (Model.Mode == "I" && Model.Mode != "A")
+                {
+                    <button type="submit" id="btnSave" class="btn btn-success mx-2">Save</button>
+                    <button type="button" id="btnReset" class="btn btn-secondary btn-block" onclick="location.href='@Url.Action("ClaimEdit", "ClaimEdit", new { clmUid = Model.motorClaimEntity.ClmUid })'"><i class="fas fa-undo mr-1"></i>Reset</button>
+
+                }
+                @if (Model.Mode == "U")
+                {
+                    <button type="submit" id="btnSave" class="btn btn-success mx-2">Update</button>
+                    <button type="button" id="btnSurvey" class="btn btn-success mx-2">Intimate to Survey</button>
+                    <button type="button" id="btnReset" class="btn btn-secondary btn-block" onclick="location.href='@Url.Action("ClaimEdit", "ClaimEdit", new { clmUid = Model.motorClaimEntity.ClmUid })'">Reset</button>
+
+                    @if (Model.motorClmSurHdrEntity.SurStatus == "S" && (Model.motorClaimEntity.ClmApprStatus != "A" || Model.motorClaimEntity.ClmApprStatus != "R"))
+                    {
+
+                        <button type="submit" class="btn btn-primary mx-2" id="btnViewSurvey">Survey</button>
+                        <button type="button" class="btn btn-success" id="approveButton" onclick="showApprovalConfirmation('@Url.Action("ApproveClaim", "ClaimEdit", new { id = Model.motorClaimEntity.ClmUid })')" form="claimForm">Approve</button>
+                        <button type="button" class="btn btn-danger mx-2" id="btnReject" onclick="showRejectionConfirmation('@Url.Action("RejectClaim", "ClaimEdit", new { id = Model.motorClaimEntity.ClmUid })')" form="claimForm">Reject</button>
+
+                        if(Model.motorClaimEntity.ClmApprStatus=="A")
+                        {
+                            <button type="button" class="btn btn-warning" id="printButton" form="claimForm" data-sur-uid="@Model.motorClmSurHdrEntity.SurUid"><i class="fas fa-print"></i> Print</button>
+
+                        }
+                    }
+
+                }
+            </div>
+        </div>

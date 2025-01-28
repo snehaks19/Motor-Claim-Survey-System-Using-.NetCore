@@ -1,0 +1,222 @@
+﻿@using MotorClaimSurveyApp.Areas.Master.ViewModels
+@model CodesMasterViewModel
+@{
+    Layout = "_Layout";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Success',
+                '@TempData["SuccessMessage"]',
+                'success'
+            ).then(() => {
+            $.post('/Transaction/ClaimEdit/ClearSuccessMessage')
+                .done(function () {
+                    console.log("TempData cleared successfully");
+                })
+                .fail(function () {
+                    console.error("Failed to clear TempData");
+                });
+        });
+        };
+
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Failed',
+                '@TempData["ErrorMessage"]',
+                'failed'
+            )
+        };
+
+    </script>
+}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+    #CmValue::placeholder {
+        text-align: left;
+    }
+
+    #CmValue {
+        text-align: right;
+    }
+
+    .btn-primary {
+        background-color: navy;
+    }
+    </style>
+
+<div class="container">
+    
+    <div class="card">
+        <div class="d-flex justify-content-between align-items-start">
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Master/CodesMaster/CodesMasterListing';">Back</button>
+            <h3 style="color:navy">CODES MASTER ENTRY</h3>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Master/CodesMaster/CodesMasterEdit';">Add</button>
+
+            
+        </div>
+        <br />
+        <div class="card-body">
+            <form action="/Master/CodesMaster/CodesMasterEdit" method="post">
+                @Html.AntiForgeryToken()
+                
+               
+                <div class="row">
+                    @if (Model.Mode != "U")
+                    {
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtType" class="control-label">Type<span class="text-danger">*</span></label>
+                                <input type="text" name="CodesMasterEntity.CmType" id="txtType" class="form-control" placeholder="Enter Type" value="@Model.CodesMasterEntity.CmType" required maxlength="12" oninput="transformInputValue(this)" />
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.CodesMasterEntity.CmType)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtCode" class="control-label">Code<span class="text-danger">*</span></label>
+                                <input type="text" name="CodesMasterEntity.CmCode" id="txtCode" class="form-control" placeholder="Enter Code" value="@Model.CodesMasterEntity.CmCode" required maxlength="12" oninput="transformInputValue(this)" />
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.CodesMasterEntity.CmCode)</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtType" class="control-label">Type<span class="text-danger">*</span></label>
+                                <input type="text" name="CodesMasterEntity.CmType" id="txtType" class="form-control" placeholder="Enter Type" value="@Model.CodesMasterEntity.CmType" required maxlength="12" oninput="transformInputValue(this)" readonly/>
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.CodesMasterEntity.CmType)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="txtCode" class="control-label">Code<span class="text-danger">*</span></label>
+                                <input type="text" name="CodesMasterEntity.CmCode" id="txtCode" class="form-control" placeholder="Enter Code" value="@Model.CodesMasterEntity.CmCode" required maxlength="12" oninput="transformInputValue(this)" readonly />
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.CodesMasterEntity.CmCode)</span>
+                            </div>
+                        </div>
+                    }
+                   
+                    
+                    
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="CmValue" class="control-label">Value</label>
+                            <input type="number" name="CodesMasterEntity.CmValue" step="0.01" id="CmValue" class="form-control" placeholder="Enter Value" value="@Model.CodesMasterEntity.CmValue" oninput="limitToTwoDecimalPlaces(this)" min="0" max="9999999" style="text-align: right;" maxlength="7" />
+                            <span class="text-danger">@Html.ValidationMessageFor(model => model.CodesMasterEntity.CmValue)</span>
+                            
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="CmDesc" class="control-label">Description</label>
+                            <input type="text" name="CodesMasterEntity.CmDesc" id="CmDesc" class="form-control" placeholder="Enter Description" value="@Model.CodesMasterEntity.CmDesc?.Trim()"  maxlength="120"/>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+@*                                 <input type="checkbox" name="CodesMasterEntity.CmActiveYN" id="cmActiveYNCheckbox"  class="custom-control-input" value="Y" @(Model.CodesMasterEntity.IsActive == true ? "checked" : "") />
+ *@                                      @Html.CheckBoxFor(m => m.CodesMasterEntity.IsActive, new { @class = "form-check-input", @id = "cmActiveYNCheckbox" })
+                                <label class="custom-control-label" for="cmActiveYNCheckbox">Active Y/N</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-4 d-flex justify-content-center gap-2">
+                                         
+                        <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Submit
+                    </button>
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fas fa-undo mr-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
+                @Html.HiddenFor(m => m.Mode)
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+
+        $(document).on('change', '#txtCode, #txtType', function () {
+        var code = $('#txtCode').val().trim();
+        var type = $('#txtType').val().trim();
+
+        console.log("Code: " + code);
+        console.log("Type: " + type);
+
+        if (code && type) {
+            $.ajax({
+                type: "POST",
+                url: "/Master/CodesMaster/CheckIfCodeExists",
+                data: { pCode: code, pType: type }, 
+                dataType: "json",
+                success: function (response) {
+                    console.log(response);
+                    if (response.exists === true) {
+                       if (response.exists) 
+                       {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'warning!',
+                            text: response.message
+                        });
+                    }
+                        $("#txtCode").val("");
+                        $("#txtType").val("");
+                    } else {
+                        $("#codeExistsMessage").hide();
+                        $("#typeExistsMessage").hide();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error: " + status + " " + error);
+                }
+            });
+        } else {
+            console.log("Both code and type must be filled in");
+        }
+    });
+
+  
+        function transformInputValue(inputElement) {
+        inputElement.value = inputElement.value.trim().toUpperCase();
+    }
+
+        function limitToTwoDecimalPlaces(input) {
+        const regex = /^\d+(\.\d{0,2})?$/;
+        if (!regex.test(input.value)) {
+            input.value = input.value.slice(0, -1);  
+        }
+    }
+    
+
+</script>
+

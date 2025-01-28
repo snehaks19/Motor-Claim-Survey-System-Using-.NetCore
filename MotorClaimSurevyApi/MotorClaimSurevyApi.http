@@ -1,0 +1,6 @@
+@MotorClaimSurevyApi_HostAddress = http://localhost:5063
+
+GET {{MotorClaimSurevyApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,190 @@
+﻿@model StatisticsModel
+
+@{
+    Layout = "_Layout";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy and Claim Status Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            color: #343a40;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .chart-container {
+            max-width: 320px;
+            margin: 15px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .chart-container:hover {
+                transform: translateY(-10px); /* Slight hover effect */
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            }
+
+        h3 {
+            text-align: center;
+            color: #495057;
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+        }
+
+        canvas {
+            max-height: 300px;
+            transition: transform 0.3s ease;
+        }
+
+       
+
+        .chart-container {
+            max-width: 100%;
+            padding: 15px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+        }
+
+        }
+    </style>
+</head>
+<body>
+    <h2>POLICY & CLAIM STATUS OVERVIEW</h2>
+    <div class="dashboard">
+        <!-- Policy Status Chart -->
+        <div class="chart-container">
+            <h3>Policy Status</h3>
+            <canvas id="policyChart"></canvas>
+        </div>
+
+        <!-- Claim Status Chart -->
+        <div class="chart-container">
+            <h3>Claim Status</h3>
+            <canvas id="claimChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Policy Chart Data
+        const policyData = {
+            labels: ['Approved Policies', 'Unapproved Policies'],
+            datasets: [{
+                label: 'Policy Status',
+                data: [@Model.ApprPolicyCount, @Model.UnApprPolicyCount], // Bind dynamically
+                backgroundColor: ['#000080', '#FFCC00'], // Green and red
+                borderColor: ['#ffffff', '#ffffff'],
+                borderWidth: 2
+            }]
+        };
+
+        // Claim Chart Data
+        const claimData = {
+            labels: ['Approved Claims', 'Pending Claims', 'Rejected Claims'],
+            datasets: [{
+                label: 'Claim Status',
+                data: [@Model.ApprClaimCount, @Model.PendingClaimCount, @Model.RejClaimCount], // Bind dynamically
+                backgroundColor: ['#000080', '#FFCC00', '#dc3545'], // Blue, yellow, red
+                borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+                borderWidth: 2
+            }]
+        };
+
+        // Policy Chart Config
+        const policyConfig = {
+            type: 'doughnut',
+            data: policyData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, family: 'Segoe UI' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                layout: { padding: 5 },
+                cutout: '55%'
+            }
+        };
+
+        // Claim Chart Config
+        const claimConfig = {
+            type: 'doughnut',
+            data: claimData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, family: 'Segoe UI' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                layout: { padding: 5 },
+                 cutout: '55%'
+            }
+        };
+
+        // Initialize Policy Chart
+        const policyCtx = document.getElementById('policyChart').getContext('2d');
+        new Chart(policyCtx, policyConfig);
+
+        // Initialize Claim Chart
+        const claimCtx = document.getElementById('claimChart').getContext('2d');
+        new Chart(claimCtx, claimConfig);
+    </script>
+
+</body>
+</html>

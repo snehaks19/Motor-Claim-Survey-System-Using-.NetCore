@@ -1,0 +1,184 @@
+﻿@using MotorClaimSurveyApp.Areas.Transaction.ViewModels
+@{
+    Layout = "_Layout";
+}
+
+@model ClaimViewModel
+
+
+<html>
+<head>
+    <style>
+        #gdCodes {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            #gdCodes th, #gdCodes td {
+                border: 1px solid #ddd;
+                padding: 4px 8px; /* Adjust padding to remove unwanted space */
+                text-align: left;
+                white-space: nowrap; /* Prevents wrapping of text */
+                font-size: 14px;
+            }
+
+            #gdCodes th {
+                /* background-color: lightblue; */
+                text-align:left;
+                background-color: #a8d8ea;
+                color: #003366;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes td {
+                background-color: #f4f8fb;
+                color: #00264d;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes tr:hover {
+                background-color: lightgrey;
+            }
+
+        body {
+            background-color: white !important;
+            justify-content: center;
+        }
+
+        #btnadd {
+            padding-left: 88.5%;
+        }
+
+        .btn-success {
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .btn-primary {
+            background-color: navy;
+        }
+    </style>
+</head>
+<body>
+    <br />
+    <div class="container">
+        <form asp-controller="ClaimListing" asp-action="ClaimEdit" style="display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Home/Index';">Back</button>
+            <h2 style="text-align:center; color:navy">CLAIM LISTING</h2>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Transaction/ClaimEdit/ClaimEdit';">Add</button>
+        </form>
+        <br />
+        <div class="table-container" id="VoucherTable">
+            <br />
+            <table id="gdCodes" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>CLM_UID</th>
+                        <th>CLAIM NO</th>
+                        <th>POLICY NO</th>
+                        <th>FROM DATE</th>
+                        <th>TO DATE</th>
+                        <th>NAME</th>
+                        <th>LOSS DATE</th>
+                        <th>INTIMATION DATE</th>
+                        <th>SURVEY</th>
+                        <th>STATUS</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="//cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                $("#gdCodes").DataTable({
+                    autoWidth: true,  // Enable automatic column width adjustment
+                    ajax: {
+                        url: "/Transaction/ClaimListing/ClaimListBinding",
+                        type: "POST",
+                        datatype: "json",
+                    },
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    ordering: false,
+                    columnDefs: [{
+                        targets: [0],
+                        visible: false,
+                        searchable: true
+                    }],
+                    columns: [
+                        { "data": "CLM_UID", "name": "CLM_UID", "visible": false },
+                        { "data": "CLM_NO", "name": "CLM_NO" },
+                        { "data": "CLM_POL_NO", "name": "CLM_POL_NO" },
+                        { "data": "CLM_POL_FM_DT", "name": "CLM_POL_FM_DT" },
+                        { "data": "CLM_POL_TO_DT", "name": "CLM_POL_TO_DT" },
+                        { "data": "CLM_POL_ASSR_NAME", "name": "CLM_POL_ASSR_NAME" },
+                        { "data": "CLM_LOSS_DT", "name": "CLM_LOSS_DT" },
+                        { "data": "CLM_INTM_DT", "name": "CLM_INTM_DT" },
+                        { "data": "CLM_SUR_CR_YN", "name": "CLM_SUR_CR_YN" },
+                        { data: "CLM_APPR_STATUS", name: "CLM_APPR_STATUS",
+                          render: function (data, type, row) {
+                              if (data === "Approved") {
+                                    return '<i class="fa fa-check-circle" style="color: green; display: inline-block; width: 100%; text-align: center;" title="Approved"></i>'; // Icon for approved
+                                } else if (data === "Rejected") {
+                                    return '<i class="fa fa-times-circle" style="color: red; display: inline-block; width: 100%; text-align: center;" title="Rejected"></i>'; // Icon for rejected
+                                } else {
+                                    return '<i class="fa fa-spinner " style="color: orange; display: inline-block; width: 100%; text-align: center;" title="Pending"></i>'; // Icon for pending
+                                }
+                                          }
+                                        },
+                        {
+                            data: null,
+                            render: function (data, type, row) {
+                                var id = row.CLM_UID;
+                                var editButton = '<a href="#" onclick="return EditCodes(\'' + id + '\')" class="btn-img"><i class="fa fa-edit" style="display: flex; justify-content: center; font-size: 18px;"></i></a>';
+                                return editButton;
+                            }
+                        }
+                    ]
+                });
+            });
+
+            function EditCodes(id) {
+                window.location.href = '/Transaction/ClaimEdit/ClaimEdit?clmUid=' + id ;
+                return false;
+               }
+
+            function ViewDetails(id) {
+                
+                window.location.href = '/Transaction/ClaimEdit/ClaimEdit?clmUid=' + id ;
+                 
+            }
+            function redirectToURL() {
+                // Get the form action URL
+
+                /*  var formAction = document.getElementById("redirectForm").getAttribute("asp-action");*/
+
+                // Perform the redirection
+                window.location.href = '';
+            }
+
+
+        </script>
+
+
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+        <link href="//cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css" rel="stylesheet" />
+    }
+</body>
+</html>

@@ -1,0 +1,356 @@
+﻿@using MotorClaimSurveyApp.Areas.Master.ViewModels
+@model UserMasterViewModel
+@{
+    Layout = "_Layout";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Success',
+                '@TempData["SuccessMessage"]',
+                'success'
+            ).then(() => {
+            $.post('/Transaction/ClaimEdit/ClearSuccessMessage')
+                .done(function () {
+                    console.log("TempData cleared successfully");
+                })
+                .fail(function () {
+                    console.error("Failed to clear TempData");
+                });
+        });
+        };
+
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Failed',
+                '@TempData["ErrorMessage"]',
+                'failed'
+            )
+        };
+
+    </script>
+}
+<style>
+    .btn-primary {
+        background-color: navy;
+    }
+</style>
+
+<div class="container">
+    <div class="card">
+        <div class="d-flex justify-content-between align-items-start">
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Master/UserMaster/UserMasterListing';">Back</button>
+            <h3 style="color:navy">USER MASTER ENTRY</h3>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/Master/UserMaster/UserMasterEdit';">Add</button>
+
+        </div>
+        <div class="card-body">
+            <form action="/Master/UserMaster/UserMasterEdit" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="col-md-6">
+                        @if (Model.Mode != "U")
+                        {
+                        <div class="form-group">
+                            <label for="UserId" class="control-label">ID<span class="text-danger">*</span></label>
+                            <input type="text" name="UserMasterEntity.UserId" id="UserId" class="form-control" placeholder="Enter Id" value="@Model.UserMasterEntity.UserId" oninput="transformInputValue(this)" maxlength="12" required />
+                            <span class="text-danger">@Html.ValidationMessageFor(model => model.UserMasterEntity.UserId)</span>
+                        </div>
+                        }
+                        else
+                        {
+                            <div class="form-group">
+                                <label for="UserId" class="control-label">ID<span class="text-danger">*</span></label>
+                                <input type="text" name="UserMasterEntity.UserId" id="UserId" class="form-control" placeholder="Enter Id" value="@Model.UserMasterEntity.UserId" oninput="transformInputValue(this)" maxlength="12" required readonly/>
+                                <span class="text-danger">@Html.ValidationMessageFor(model => model.UserMasterEntity.UserId)</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="UserName" class="control-label">NAME<span class="text-danger">*</span></label>
+                            <input type="text" name="UserMasterEntity.UserName" id="UserName" class="form-control" placeholder="Enter Name" value="@Model.UserMasterEntity.UserName" oninput="transformInputValue(this)" maxlength="30" required />
+                            <span class="text-danger">@Html.ValidationMessageFor(model => model.UserMasterEntity.UserName)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="UserPassword" class="control-label">PASSWORD<span class="text-danger">*</span></label>
+                            <input type="password" name="UserMasterEntity.UserPassword" id="UserPassword" class="form-control" placeholder="Enter Password" value="@Model.UserMasterEntity.UserPassword" required maxlength="24" oninput="transformInputValue(this)" />
+                            <span class="text-danger">@Html.ValidationMessageFor(model => model.UserMasterEntity.UserPassword)</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="ConfirmPassword" class="form-label">Confirm Password<span class="text-danger">*</span></label>
+                            @Html.TextBoxFor(m => m.UserMasterEntity.ConfirmPassword, new { @class = "form-control", @id = "ConfirmPassword", @placeholder = "Confirm password", @maxlength = "24", @type = "Password",@required="required", @oninput = "transformInputValue(this)" })
+                            @Html.ValidationMessageFor(m => m.UserMasterEntity.ConfirmPassword, "", new { @class = "text-danger" })
+
+                            @* <label for="ConfirmPassword" class="control-label">Confirm Password<span class="text-danger">*</span></label>
+                            <input type="password" name="UserMasterEntity.ConfirmPassword" id="ConfirmPassword" class="form-control" placeholder="Enter Password" value="@Model.UserMasterEntity.ConfirmPassword" required maxlength="24" />
+                            <span class="text-danger">@Html.ValidationMessageFor(model => model.UserMasterEntity.ConfirmPassword)</span> *@
+                        </div>
+                    </div>
+                  
+                </div>
+              
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="UserType" class="control-label">USER TYPE<span class="text-danger">*</span></label>
+                            @Html.DropDownListFor(m => m.UserMasterEntity.UserType, new SelectList(Model.ListUserType, "Value", "Text"), (object)new { @class = "form-control", @required = "required",@id="userType" })
+                            <span class="text-danger">@Html.ValidationMessageFor(model => model.UserMasterEntity.UserType)</span>
+                        </div>
+                    </div>
+             
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+@*                                 <input type="checkbox" name="UserMasterEntity.UserActiveYn" id="userActiveYNCheckbox" class="custom-control-input" checked="@Model.UserMasterEntity.UserActiveYn" />
+ *@                                @Html.CheckBoxFor(m => m.UserMasterEntity.IsActive, new { @class = "form-check-input", @id = "userActiveYNCheckbox" })
+                                <label class="custom-control-label" for="userActiveYNCheckbox">Active Y/N</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <br />
+                <div class="row justify-content-center">
+                    <div class="col-md-4 d-flex justify-content-center gap-2">
+                       
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Submit
+                        </button>
+                        <button type="reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+                @Html.HiddenFor(m => m.Mode)
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '@TempData["SuccessMessage"]',
+            showConfirmButton: true
+        });
+    </script>
+}
+
+<script>
+
+
+    document.getElementById("userType").oninvalid = function (event) {
+        event.target.setCustomValidity("Please select a User Type.");
+    };
+
+    document.getElementById("userType").oninput = function (event) {
+        event.target.setCustomValidity(""); // Clear the message on valid input
+    };
+
+
+            $(document).ready(function () {
+
+        if ('@Model.Mode' === 'U') {
+
+            var password = $('#UserPassword').val();
+            $('#ConfirmPassword').val(password);
+        }
+    });
+
+        $(document).on('change', '#UserId', function () {
+        var code = $('#UserId').val().trim();
+       
+
+        console.log("Id: " + code);
+       
+
+        if (code) {
+            $.ajax({
+                type: "POST",
+                url: "/Master/UserMaster/CheckIfIdExists",
+                data: { pCode: code}, // Ensure this matches your server-side method's parameter names
+                dataType: "json",
+                success: function (response) {
+                    console.log(response);
+                    if (response.exists === true) {
+                        Swal.fire({
+                            title: "warning",
+                            text: response.message,
+                            icon: "warning",
+                            confirmButtonText: "OK"
+                        });
+                        $("#UserId").val("");
+                        
+                    } else {
+                        $("#codeExistsMessage").hide();
+                        
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error: " + status + " " + error);
+                }
+            });
+        } else {
+            console.log("Both code and type must be filled in");
+        }
+    });
+
+            function transformInputValue(inputElement) {
+            inputElement.value = inputElement.value.trim().toUpperCase();
+        }
+    </script>
+@* 
+<h2 class="form-heading">Add New Codes Master</h2>
+
+<form asp-area="Master" asp-controller="CodesMaster" asp-action="CodesMasterEdit" method="post" class="cm-form">
+    <div class="form-row">
+        <div class="form-group">
+            <label asp-for="@Model.CodesMasterEntity.CmCode" class="form-label">Code</label>
+            <input asp-for="@Model.CodesMasterEntity.CmCode" type="text" class="form-input" />
+            <span asp-validation-for="@Model.CodesMasterEntity.CmCode" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="@Model.CodesMasterEntity.CmType" class="form-label">Type</label>
+            <input asp-for="@Model.CodesMasterEntity.CmType" type="text" class="form-input" />
+            <span asp-validation-for="@Model.CodesMasterEntity.CmType" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label asp-for="@Model.CodesMasterEntity.CmValue" class="form-label">Value</label>
+            <input asp-for="@Model.CodesMasterEntity.CmValue" type="text" class="form-input" />
+            <span asp-validation-for="@Model.CodesMasterEntity.CmValue" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="@Model.CodesMasterEntity.CmDesc" class="form-label">Description</label>
+            <input asp-for="@Model.CodesMasterEntity.CmDesc" type="text" class="form-input" />
+            <span asp-validation-for="@Model.CodesMasterEntity.CmDesc" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label asp-for="@Model.CodesMasterEntity.CmActiveYn" class="form-label">Active</label>
+            <input asp-for="@Model.CodesMasterEntity.CmActiveYn" type="checkbox" class="form-checkbox" id="cmActiveYNCheckbox" />
+            <input type="hidden" asp-for="@Model.CodesMasterEntity.CmActiveYn" id="cmActiveYNHidden" />
+            <span asp-validation-for="@Model.CodesMasterEntity.CmActiveYn" class="text-danger"></span>
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="submit-button-container">
+        <button type="submit" class="form-button">Submit</button>
+    </div>
+</form>
+
+<style>
+    /* Same styling retained as requested */
+    .cm-form {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-heading {
+        text-align: center;
+        font-size: 2rem;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .form-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 1rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+        .form-input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+    .form-checkbox {
+        margin-top: 10px;
+    }
+
+    .submit-button-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .form-button {
+        background-color: #007bff;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        .form-button:hover {
+            background-color: #0056b3;
+        }
+
+    .text-danger {
+        color: #e74c3c;
+        font-size: 0.875rem;
+    }
+</style> *@

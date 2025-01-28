@@ -1,0 +1,116 @@
+﻿@model StatisticsModel
+
+@{
+    Layout = "_Layout";
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Status Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+        }
+
+        h2 {
+            text-align: center;
+            color: #343a40;
+            font-size: 1.5rem; /* Smaller heading font */
+            margin-bottom: 10px;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px; /* Space between charts */
+        }
+
+        .chart-container {
+            max-width: 300px; /* Reduced width for compact layout */
+            margin: 10px; /* Center aligned */
+            background: white;
+            padding: 15px; /* Reduced padding */
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            max-height: 250px; /* Limit chart height */
+        }
+    </style>
+</head>
+<body>
+
+    
+
+    <div class="dashboard">
+        <!-- Survey Status Chart -->
+        <div class="chart-container">
+            <h3 style="text-align: center;">Survey Status</h3>
+            <canvas id="surveyChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Survey Chart Data
+        const surveyData = {
+            labels: ['Completed Surveys', 'Pending Surveys'],
+            datasets: [{
+                label: 'Survey Status',
+                data: [@Model.SubmittedSurveyCount, @Model.PendingSurveyCount], // Bind dynamically
+                backgroundColor: ['#000080', '#ffc107'], // Green, Yellow, Red
+                borderColor: ['#ffffff', '#ffffff'],
+                borderWidth: 2
+            }]
+        };
+
+        // Survey Chart Config
+        const surveyConfig = {
+            type: 'doughnut',
+            data: surveyData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, family: 'Segoe UI' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                layout: { padding: 5 },
+                animation: {
+                    duration: 2000, // 2 seconds animation
+                    easing: 'easeInOutQuart', // Smooth easing
+                    animateScale: true, // Animate scaling
+                    animateRotate: true // Animate rotation
+                }
+            }
+        };
+
+        // Initialize Survey Chart
+        const surveyCtx = document.getElementById('surveyChart').getContext('2d');
+        new Chart(surveyCtx, surveyConfig);
+
+    </script>
+
+</body>
+</html>

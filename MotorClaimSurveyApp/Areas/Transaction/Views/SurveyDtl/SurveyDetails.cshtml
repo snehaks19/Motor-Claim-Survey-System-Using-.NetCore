@@ -1,0 +1,644 @@
+﻿@using MotorClaimSurveyApp.Areas.Transaction.ViewModels
+@model SurveyDetailsViewModel
+
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    Layout = "_Layout";
+    string userId = HttpContextAccessor.HttpContext.Session.GetString("UserId");
+    string surUid = HttpContextAccessor.HttpContext.Request.Query["surUid"];
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
+
+<style>
+    .right{
+        text-align: right;
+    }
+
+    #unitPrice::placeholder, #quantity::placeholder {
+        text-align: left;
+    }
+
+    .btn-primary {
+        background-color: navy;
+    }
+    
+</style>
+</style>
+
+@if (TempData["DtlSuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Success',
+                '@TempData["DtlSuccessMessage"]',
+                'success'
+            )
+        };
+
+    </script>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Failed',
+                '@TempData["ErrorMessage"]',
+                'failed'
+            )
+        };
+
+    </script>
+}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@section Scripts{
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+
+    <!-- DataTables JavaScript -->
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+
+
+    <script>
+
+               
+        function formatUnitPriceWithCommas(number) {
+            if (!number) return ''; 
+            return parseInt(number.replace(/,/g, '')).toLocaleString(); 
+        }
+
+        
+                function limitDecimalAndFormat(input) {
+
+                    const errorSpan = document.getElementById('unitError');
+
+                if (input.value !== '' && parseInt(input.value, 10) < 1) {
+                    errorSpan.style.display = 'inline'; // Show the error message
+                } else {
+                    errorSpan.style.display = 'none'; // Hide the error message
+                }
+                    
+            let value = input.value;
+
+            value = value.replace(/[^0-9.]/g, '');
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts[1];
+            }
+
+            if (parts[1] && parts[1].length > 2) {
+                value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+
+            input.value = value;
+        }
+
+        function limitDecimalAndFormat2(input) {
+            input.value = input.value.replace(/[^0-9]/g, '');
+
+                const errorSpan = document.getElementById('quantityError');
+
+                // Check if the value is less than 1
+                if (input.value !== '' && parseInt(input.value, 10) < 1) {
+                    errorSpan.style.display = 'inline'; // Show the error message
+                } else {
+                    errorSpan.style.display = 'none'; // Hide the error message
+                }
+
+            let value = input.value;
+
+            value = value.replace(/[^0-9.]/g, '');
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts[1];
+            }
+
+            if (parts[1] && parts[1].length > 2) {
+                value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+
+            input.value = value;
+        }
+
+
+        // Function to format numbers with commas
+        function formatNumberWithCommas(input) {
+            var value = input.value.replace(/,/g, ''); // Remove any existing commas
+            input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Add commas
+        }
+
+        // Function to remove commas from the input fields before submitting the form
+        function removeCommasBeforeSubmit() {
+            var fields = [
+                'SurdLcAmt',
+                'SurdFcAmt',
+                'unitPrice' ,
+                'quantity'
+            ];
+
+            fields.forEach(function(fieldId) {
+                var field = document.getElementById(fieldId);
+                if (field) {
+                    // Remove commas before submitting the form
+                    field.value = field.value.replace(/,/g, '');
+                }
+            });
+        }
+
+        // Format all input fields with commas after the page loads
+        window.addEventListener('load', function() {
+            var fields = [
+                'SurdLcAmt',
+                'SurdFcAmt',
+                'unitPrice' ,
+                'quantity'
+            ];
+
+            fields.forEach(function(fieldId) {
+                var field = document.getElementById(fieldId);
+                if (field) {
+                    formatNumberWithCommas(field);
+                }
+            });
+
+            // var submitButton = document.getElementById('bttnsave');
+            // if (submitButton) {
+               
+            //     submitButton.addEventListener('click', function(event) {
+            //         // Call the function to remove commas before submitting the form
+            //         removeCommasBeforeSubmit();
+
+            //         // Optionally, submit the form manually if you need more control
+            //         document.getElementById('surveyForm').submit();
+            //     });
+            // }
+        });
+    </script>
+
+
+
+
+    <script>
+     
+        function formatNumber(value) {
+            value = parseFloat(value).toFixed(2); // Ensure two decimal places
+            var parts = value.split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Add commas to the integer part
+            return parts.join(".");
+        }
+
+        $(document).ready(function () {
+
+            var unitVal = $("#unitPrice").val();
+            var quantityVal = $("#quantity").val();
+            if(unitVal==0){
+                    $("#unitPrice").val('');
+            }
+                if(quantityVal==0){
+                        $("#quantity").val('');
+            }
+
+            function formatNumberWithCommas(value) {
+                if (isNaN(value)) {
+                    return value; // Return the value as is if it's not a number
+                }
+
+                return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+           $(function () {
+        // Initialize the value with comma formatting when the page loads
+            var initialValue = $("#unitPrice").val();
+            $("#unitPrice").val(formatNumberWithCommas(initialValue));
+                var initialValue1 = $("#quantity").val();
+                    $("#quantity").val(formatNumberWithCommas(initialValue1));
+
+        // Add comma separation while typing
+        $(".numberText").on("blur", function () {
+            var sanitizedValue = $(this).val().replace(/[^0-9.]/g, ""); // Remove any non-numeric characters
+            var parts = sanitizedValue.split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Add commas
+            if (parts[1] && parts[1].length > 2) {
+                parts[1] = parts[1].slice(0, 2); // Limit decimal places to 2
+            }
+            $(this).val(parts.join("."));
+        });
+    });
+
+           
+
+
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const PsurdUid = urlParams.get('surdUid');
+        const PsurUid = urlParams.get('surUid');
+        const PcurrencyCode = urlParams.get('currencyCode');
+        console.log(PsurdUid);
+        console.log(PsurUid);
+        console.log(PcurrencyCode);
+         if ((PsurdUid!=0 && PsurdUid!=null)   && PsurUid && PcurrencyCode) {
+           
+            $('#ddlSurItemCode').prop('disabled', true);
+        }
+
+            var surUid = new URLSearchParams(window.location.search).get('surUid');
+            if (surUid) 
+            {
+                $('#surdSurUid').val(surUid);
+            }    
+            // var currencyCode = new URLSearchParams(window.location.search).get('currencyCode');
+            // // Calculate LC Amount on Unit Price or Quantity change
+            $('#unitPrice, #quantity').on('input', function () {
+                var unitPrice = parseFloat($('#unitPrice').val().replace(/,/g, '')) || 0;
+                var quantity = parseFloat($('#quantity').val().replace(/,/g, '')) || 0;
+                var lcAmount = unitPrice * quantity;
+
+                $('#SurdLcAmt').val(formatNumber(lcAmount));
+
+                var currencyCode = new URLSearchParams(window.location.search).get('currencyCode');
+                
+                if (currencyCode && lcAmount != null) {
+                    
+                    $.ajax({
+                        url: '/Transaction/SurveyDtl/GetConversionRate',
+                        type: 'GET',
+                        data: { currencyCode: currencyCode, lcAmount: lcAmount },
+                        success: function (data) {
+                            if (data.success) {
+                                $('#SurdFcAmt').val(formatNumber(data.fcAmount));
+                            } else {
+                                alert('Error: ' + data.errorMessage);
+                                $('#SurdFcAmt').val('');
+                            }
+                        },
+                        error: function () {
+                            alert('Error occurred while converting currency');
+                        }
+                    });
+                } else {
+                    $('#SurdFcAmt').val('');
+                }
+            });
+
+        
+
+         function checkDuplicateItem() {
+            var itemCode = $('#ddlSurItemCode').val(); // Get selected item code
+            var surveyId =surUid;
+
+            console.log(itemCode)
+            console.log(surveyId)
+
+
+            if (itemCode && surveyId) {
+                $.ajax({
+                    type: "POST",
+                    url: "/Transaction/SurveyDtl/CheckIfItemExists", // Replace with your actual controller action URL
+                    data: { itemCode: itemCode, surveyId: surveyId },
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.exists === true) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Warning',
+                                text: response.message
+                            });
+
+                            // Reset the dropdown to its default state
+                            $("#ddlSurItemCode").val("").trigger('change');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error occurred: " + status + " " + error);
+                    }
+                });
+            } else {
+                console.log("Both Item Code and Survey ID must be filled in.");
+            }
+        }
+
+        $('#ddlSurItemCode').change(checkDuplicateItem);
+
+
+        $("#addItemButton").on("click", function () {
+        var currencyCode = PcurrencyCode;
+        var surUid = PsurUid;
+
+        console.log(currencyCode);
+        console.log(surUid);
+
+        if (currencyCode) {
+        window.location.href = '/Transaction/SurveyDtl/AddDetails?currencyCode=' + currencyCode + '&surUid=' + surUid;
+        } else {
+        alert("Please select a valid currency code.");
+        }
+        });
+          
+
+        });
+
+        function limitToTwoDecimalPlaces(input) {             
+            const regex = /^\d+(\.\d{0,2})?$/;
+                if (!regex.test(input.value)) {
+                    input.value = input.value.slice(0, -1);  
+                }
+        }
+
+
+
+    
+
+    </script>
+}
+
+
+<div class="heads">
+    <div class="d-flex justify-content-between align-items-start">
+        @* <button class="btn btn-primary back"
+        type="button"
+        onclick="window.location.href='@Url.Action("SurveyEdit", "SurveyHdr")?surUid=@Model.MotorClmSurDtlEntity.SurdSurUid';">
+            Back
+        </button> *@
+       
+            <a class="btn btn-primary" href="@Url.Action("SurveyEdit", "SurveyHdr", new { surUid = surUid })">
+                Back
+            </a>
+            <a class="btn btn-primary" id="addItemButton">
+                Add Item
+            </a>
+        
+    </div>
+    <h2>@ViewData["Title"]</h2>
+</div>
+<div class="container bg-light p-4 shadow rounded">
+    <h4 class="text-center mb-4" style="color:navy">SURVEY DETAILS FORM</h4><br />
+
+    <form id="surveyForm" action="@Url.Action("AddDetails", "SurveyDtl", new { SurdUid = Model.MotorClmSurDtlEntity.SurdUid })" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row mb-3">
+            <input type="hidden" name="MotorClmSurDtlEntity.SurdUid" id="surdUid" value="@Model.MotorClmSurDtlEntity.SurdUid" />
+            <input type="hidden" name="MotorClmSurDtlEntity.SurdSurUid" id="surdSurUid" value="@Model.MotorClmSurDtlEntity.SurdSurUid" />
+            <input type="hidden" name="currencyCode" id="currencyCode" value="@Model.currencyCode" />
+
+
+            <!-- Item Code -->
+            <div class="col-md-4">
+                <label asp-for="MotorClmSurDtlEntity.ItemCode" class="form-label">Item<span class="text-danger">*</span></label>
+                @Html.DropDownListFor(
+                                  m => m.MotorClmSurDtlEntity.SurdItemCode,
+                                  new SelectList(Model.ListItemCode, "Value", "Text"),
+                                 
+                                  new { @class = "form-control numberText", @required = "required", id = "ddlSurItemCode"}
+                                  )
+                @Html.HiddenFor(m => m.MotorClmSurDtlEntity.SurdItemCode)
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.MotorClmSurDtlEntity.SurdItemCode)</span>
+            </div>
+
+            <!-- Type -->
+
+            <div class="col-md-4">
+                <label asp-for="MotorClmSurDtlEntity.Type" class="form-label">Type<span class="text-danger">*</span></label>
+                @Html.DropDownListFor(
+                                  m => m.MotorClmSurDtlEntity.SurdType,
+                                  new SelectList(Model.ListItemType, "Value", "Text"),
+                                 
+                                  new { @class = "form-control", @required = "required", id = "ddlSurdType"}
+                                  )
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.MotorClmSurDtlEntity.SurdType)</span>
+            </div>
+
+            <!-- Unit Price -->
+
+            <div class="col-md-4">
+                <label asp-for="SurdUnitPrice" class="control-label">Unit Price <span class="text-danger">*</span></label>
+                <input type="text" name="MotorClmSurDtlEntity.SurdUnitPrice" id="unitPrice" class="form-control numberText" placeholder="Enter Unit Price" value="@Model.MotorClmSurDtlEntity.SurdUnitPrice" required style="text-align: right;" oninput="limitDecimalAndFormat(this)" />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.MotorClmSurDtlEntity.SurdUnitPrice)</span>
+                <span id="unitError" style="color: red; font-size: 15px; display: none;">Minimum value is 1.</span>
+
+            </div>
+
+        </div>
+        <div class="row mb-3">
+            <!-- Quantity -->
+            <div class="col-md-4">
+
+                <label for="SurdQuantity" class="control-label">Quantity <span class="text-danger">*</span></label>
+                <input type="text" name="MotorClmSurDtlEntity.SurdQuantity" id="quantity" class="form-control numberText" placeholder="Enter Quantity" value="@Model.MotorClmSurDtlEntity.SurdQuantity" required style="text-align: right;" oninput="limitDecimalAndFormat2(this)" />
+                <span class="text-danger" >@Html.ValidationMessageFor(model => model.MotorClmSurDtlEntity.SurdQuantity)</span>
+                <span id="quantityError" style="color: red; font-size: 15px; display: none;">Minimum value is 1.</span>
+            </div>
+            <!--  LC amount -->
+            <div class="col-md-4">
+                <label asp-for="SurdLcAmt" class="form-label">LC Amount </label>
+                <input id="SurdLcAmt" name="MotorClmSurDtlEntity.SurdLcAmt" class="form-control right numberText" type="text" value="@Model.MotorClmSurDtlEntity.SurdLcAmt" readonly />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.MotorClmSurDtlEntity.SurdLcAmt)</span>
+            </div>
+            <!--  FC amount -->
+            <div class="col-md-4">
+                <label asp-for="SurdFcAmt" class="form-label">FC Amount </label>
+                <input id="SurdFcAmt" name="MotorClmSurDtlEntity.SurdFcAmt" class="form-control right numberText" type="text" value="@Model.MotorClmSurDtlEntity.SurdFcAmt" readonly />
+                <span class="text-danger">@Html.ValidationMessageFor(model => model.MotorClmSurDtlEntity.SurdFcAmt)</span>
+            </div>
+
+            @Html.HiddenFor(m => m.Mode)
+        </div>
+
+        <!-- Submit and Update Buttons -->
+        <div class="row justify-content-center">
+            <div class="col-md-4 d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary mx-2" id="bttnsave">Save</button>
+
+                @if (Model.MotorClmSurDtlEntity.SurdUid != 0)
+                {
+                    <button type="button" id="btnHistory" class="btn btn-primary mx-2">History</button>
+                }
+                <button type="button" id="btnReset" class="btn btn-secondary btn-block" onclick="location.href='@Url.Action("AddDetails", "SurveyDtl", new { surdUid = Model.MotorClmSurDtlEntity.SurdUid, surUid=Model.MotorClmSurDtlEntity.SurdSurUid,currencyCode=Model.currencyCode })'"><i class="fas fa-undo mr-1"></i>Reset</button>
+
+            </div>
+        </div>
+        </div>
+    </form>
+</div>
+
+
+<html>
+<br />
+<br />
+<br />
+<br />
+<head>
+    <style>
+        #gdCodes {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            #gdCodes th {
+                border: 1px solid #ddd;
+                padding: 5px;
+                text-align: center; /* Center-align headers */
+                background-color: lightskyblue;
+                white-space: nowrap; /* Prevent wrapping */
+                font-size: 14px;
+            }
+
+
+            #gdCodes th {
+                /* background-color: lightblue; */
+                text-align:left;
+                background-color: #a8d8ea;
+                color: #003366;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes td {
+                background-color: #f4f8fb;
+                color: #00264d;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes th:nth-child(4) {
+                text-align: center;
+            }
+            #gdCodes th:nth-child(5) {
+                text-align: center;
+            }
+            #gdCodes th:nth-child(6) {
+                text-align: center;
+            }
+            #gdCodes th:nth-child(7) {
+                text-align: center;
+            }
+
+
+
+            #gdCodes td {
+                border: 1px solid #ddd;
+                padding: 5px;
+                white-space: nowrap; /* Prevent wrapping */
+                font-size: 14px;
+            }
+
+            #gdCodes .text-right {
+                text-align: right; /* Right-align value fields */
+            }
+
+            #gdCodes tr:hover {
+                background-color: lightgrey;
+            }
+
+        body {
+            background-color: white !important;
+            justify-content: center;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        #gdCodes {
+            display: none;
+        }
+    </style>
+    <title></title>
+</head>
+<body>
+    <br />
+    <div class="container">
+        <div class="table-container" id="VoucherTable">
+            <table id="gdCodes" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>SL.No</th>
+                        <th>ITEM</th>
+                        <th>TYPE</th>
+                        <th>UNIT PRICE</th>
+                        <th>QUANTITY</th>
+                        <th>LC AMT</th>
+                        <th>FC AMT</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#btnHistory").on("click", function () {
+                $('#gdCodes').show();
+
+                var id = '@Model.MotorClmSurDtlEntity.SurdUid';
+
+                $("#gdCodes").DataTable({
+                    ajax: {
+                        url: "/Transaction/SurveyHist/HistoryTableBinding",
+                        data: { code: id },
+                        type: "POST",
+                        datatype: "json",
+                    },
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    ordering: false,
+                    autoWidth: false, // Disable auto width for custom sizing
+                    columnDefs: [
+                       // Center-align specific columns
+                        { targets: [3, 4, 5, 6], className: "text-right" }, // Right-align value fields
+                    ],
+                    columns: [
+                        { "data": "SURDH_SRL", "name": "SURDH_SRL" },
+                        { "data": "SURDH_ITEM_CODE", "name": "SURDH_ITEM_CODE" },
+                        { "data": "SURDH_TYPE", "name": "SURDH_TYPE" },
+                        {
+                            "data": "SURDH_UNIT_PRICE",
+                            "name": "SURDH_UNIT_PRICE",
+                            "render": function (data, type, row) {
+                                return data ? data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : data;
+                            }
+                        },
+                        { "data": "SURDH_QUANTITY", "name": "SURDH_QUANTITY" },
+                        {
+                            "data": "SURDH_LC_AMT",
+                            "name": "SURDH_LC_AMT",
+                            "render": function (data, type, row) {
+                                return data ? data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : data;
+                            }
+                        },
+                        {
+                            "data": "SURDH_FC_AMT",
+                            "name": "SURDH_FC_AMT",
+                            "render": function (data, type, row) {
+                                return data ? data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : data;
+                            }
+                        },
+                        { "data": "SURDH_ACTION", "name": "SURDH_ACTION" }
+                    ]
+                });
+            });
+        });
+
+    </script>
+
+
+@*     dlkjkj
+ *@
+</body>
+</html>

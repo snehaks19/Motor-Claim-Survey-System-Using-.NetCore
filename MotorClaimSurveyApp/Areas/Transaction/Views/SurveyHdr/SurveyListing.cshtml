@@ -1,0 +1,211 @@
+﻿@using MotorClaimSurveyApp.Areas.Transaction.ViewModels
+@{
+    Layout = "_Layout";
+}
+
+@model SurveyHeaderViewModel
+
+<html>
+<head>
+    <style>
+        #gdCodes {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            #gdCodes th, #gdCodes td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            #gdCodes th {
+                /* background-color: lightblue; */
+
+                background-color: #a8d8ea;
+                color: #003366;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes td {
+                background-color: #f4f8fb;
+                color: #00264d;
+                border: 1px solid #b0c4de;
+                padding: 10px;
+            }
+
+            #gdCodes td {
+                text-align: left;
+            }
+
+            #gdCodes th:nth-child(5) {
+                text-align: center;
+            }
+
+            #gdCodes th:nth-child(6) {
+                text-align: center;
+            }
+
+            #gdCodes td:nth-child(5) {
+                text-align: right;
+            }
+
+            #gdCodes td:nth-child(6) {
+                text-align: right;
+            }
+            #gdCodes tr:hover {
+                background-color: lightgrey;
+            }
+
+        body {
+            background-color: white !important;
+            justify-content: center;
+        }
+
+        #btnadd {
+            padding-left: 88.5%;
+        }
+
+        .btn-primary {
+            background-color: navy;
+        }
+        .text-right {
+            text-align: right !important; /* Right-align numeric data */
+        }
+    </style>
+    <title>SURVEY LISTING</title>
+</head>
+<body>
+    <br />
+    <div class="container">
+        <button type="button" class="btn btn-primary" onclick="window.location.href='/Home/Index';">Back</button>
+        <form asp-controller="SurveyHdr" asp-action="" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="text-align: center; width: 100%; margin-top: 10px;">
+                <h2 style="text-align: center; color: navy;">SURVEY LISTING</h2>
+            </div>
+        </form>
+        <div id="VoucherTable">
+            <table id="gdCodes" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>SUR_UID</th>
+                        <th>SURVEY NO</th>
+                        <th>CLAIM NO</th>
+                        <th>SURVEY DATE</th>
+                        <th>LOCATION</th>
+                        <th>FC AMOUNT</th>
+                        <th>LC AMOUNT</th>
+                        <th>SURVEY STATUS</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="//cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script>
+                        $(document).ready(function () {
+                $("#gdCodes").DataTable({
+                    autoWidth: false,
+                    scrollX: false,
+                    ajax: {
+                        url: "/Transaction/SurveyHdr/SurveyListBinding",
+                        type: "POST",
+                        datatype: "json",
+                    },
+                    processing: true,
+                    serverSide: true,
+                    filter: true,
+                    ordering: false,
+                    columnDefs: [
+                        { targets: [0], visible: false, searchable: true }
+                    ],
+                    columns: [
+                        { "data": "SUR_UID", "name": "SUR_UID" },
+                        { "data": "SUR_NO", "name": "SUR_NO" },
+                        { "data": "SUR_CLM_NO", "name": "SUR_CLM_NO" },
+                        { "data": "SUR_DATE", "name": "SUR_DATE" },
+                        { "data": "SUR_LOCATION", "name": "SUR_LOCATION" },
+                        {
+                            "data": "SUR_FC_AMT",
+                            "name": "SUR_FC_AMT",
+                            "render": function (data) {
+                                if (data === null || data === "" || isNaN(parseFloat(data))) {
+                                    return ""; // Return empty string for invalid or empty data
+                                } else {
+                                    return parseFloat(data).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Format with commas and 2 decimals
+                                }
+                            }
+                        },
+                        {
+                            "data": "SUR_LC_AMT",
+                            "name": "SUR_LC_AMT",
+                            "render": function (data) {
+                                if (data === null || data === "" || isNaN(parseFloat(data))) {
+                                    return ""; // Return empty string for invalid or empty data
+                                } else {
+                                    return parseFloat(data).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Format with commas and 2 decimals
+                                }
+                            }
+                        },
+                        { "data": "SUR_STATUS", "name": "SUR_STATUS" },
+                        {
+                            data: null,
+                            render: function (data, type, row) {
+                                var id = row.SUR_UID;
+                                var surStatus = row.SUR_STATUS; // Get the SUR_STATUS value from the row
+                                            if (surStatus === "SUBMITTED") {
+                                                return '<a href="#" onclick="return EditCodes(\'' + id + '\')" class="btn-img" style="display: inline-flex; justify-content: center; align-items: center; text-align: center; width: 100%; height: 100%; text-decoration: none;">' +
+                                                    '<i class="fa fa-eye" style="font-size: 18px; color: blue;"></i>' +
+                                                    '</a>';
+                                            } else if (surStatus === "PENDING") {
+                                                return '<a href="#" onclick="return EditCodes(\'' + id + '\')" class="btn-img" style="display: inline-flex; justify-content: center; align-items: center; text-align: center; width: 100%; height: 100%; text-decoration: none;">' +
+                                                    '<i class="fa fa-edit" style="font-size:18px; color: blue;"></i>' +
+                                                    '</a>';
+                                            } else {
+                                                 return '';
+                                            }
+
+                            }
+                        }
+                    ]
+                });
+            });
+
+
+            function EditCodes(id) {
+                window.location.href = '/Transaction/SurveyHdr/SurveyEdit?surUid=' + id ;
+                return false;
+               }
+
+            
+
+            function redirectToURL() {
+                // Get the form action URL
+
+                /*  var formAction = document.getElementById("redirectForm").getAttribute("asp-action");*/
+
+                // Perform the redirection
+                window.location.href = '';
+            }
+
+
+        </script>
+
+
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+        <link href="//cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css" rel="stylesheet" />
+    }
+</body>
+</html>
+
+

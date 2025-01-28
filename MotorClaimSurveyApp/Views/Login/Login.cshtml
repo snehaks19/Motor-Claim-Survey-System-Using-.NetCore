@@ -1,0 +1,64 @@
+﻿@model LoginModel
+
+@{
+    Layout = null;
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            Swal.fire(
+               'Error',
+                '@TempData["ErrorMessage"]',
+                'error'
+            )
+        };
+
+    </script>
+}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head runat="server">
+    <title>Motor Survey System</title>
+    <link href="~/css/login.css" rel="stylesheet" />
+
+</head>
+
+<body>
+    <form asp-controller="Login" asp-action="Login" method="post" id="form1">
+        <div class="login-container">
+            <div class="login-image">
+               
+                <h3 class="title">MOTOR CLAIM<br />SURVEY SYSTEM</h3>
+                 <img src="~/images/wallpaper.png" style="width: 700px; height: auto;"  />
+             </div>
+            <div class="login-form">
+                <h1>LOGIN</h1>
+            
+                <label asp-for="UserMasterEntity.UserId" class="form-label">User ID</label>
+                <input asp-for="UserMasterEntity.UserId" class="form-input" placeholder="Enter your ID" maxlength="10" required/>
+                <span asp-validation-for="UserMasterEntity.UserId" class="text-danger"></span>
+            
+
+            
+                <label asp-for="UserMasterEntity.UserPassword" class="form-label">Password</label>
+                <input asp-for="UserMasterEntity.UserPassword" class="form-input" placeholder="Enter your password" type="password" maxlength="10" required/>
+                <span asp-validation-for="UserMasterEntity.UserPassword" class="text-danger"></span>
+   <br />
+                <button type="submit" class="submit-btn" id="btnLogin">Login</button>
+
+                <p style="color:red">@ViewBag.Message</p>
+
+            </div>
+
+        </div>
+    </form>
+</body>
+
+</html>
